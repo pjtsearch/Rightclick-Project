@@ -1,4 +1,5 @@
 import express, { type Response } from "express"
+import { existsSync } from "node:fs"
 import { resolve } from "node:path"
 import { DatabaseSync } from "node:sqlite"
 import type { Customer, Equipment, LaborRate, Quote, QuoteLine } from "./databaseTypes.ts"
@@ -343,6 +344,7 @@ export function createApp(databasePath: string) {
   const database = new DatabaseSync(databasePath)
   const db = createDatabaseHelpers(database)
   const app = express()
+  const clientDistPath = resolve(process.cwd(), "client/dist")
 
   app.use(express.json())
 
@@ -474,6 +476,13 @@ export function createApp(databasePath: string) {
       sendConflict(response, error)
     }
   })
+
+  if (existsSync(clientDistPath)) {
+    app.use(express.static(clientDistPath))
+    app.get(/.*/, (_request, response) => {
+      response.sendFile(resolve(clientDistPath, "index.html"))
+    })
+  }
 
   return { app, database }
 }
