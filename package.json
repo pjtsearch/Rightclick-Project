@@ -6,7 +6,10 @@
   "author": "PJTSearch",
   "type": "module",
   "main": "index.ts",
-  "scripts": {},
+  "scripts": {
+    "initDatabase": "node --experimental-sqlite ./initDatabase.ts",
+    "importJsons": "node --experimental-sqlite ./importJsons.ts"
+  },
   "devDependencies": {
     "@types/node": "^25.6.0"
   }
