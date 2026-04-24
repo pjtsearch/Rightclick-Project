@@ -30,14 +30,14 @@ export type LaborRate = {
 };
 
 export type Quote = {
-  id: number;
+  id: string;
   customer: string;
   surcharge: number;
   date: string;
 };
 
 export type QuoteLine = {
-  quoteId: number;
+  quoteId: string;
   type: QuoteLineType;
   ordering: number;
   price: number;

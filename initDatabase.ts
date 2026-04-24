@@ -51,7 +51,7 @@ function main(): void {
 
     database.exec(`
       CREATE TABLE IF NOT EXISTS "quotes" (
-        "id" INTEGER PRIMARY KEY,
+        "id" TEXT PRIMARY KEY,
         "customer" TEXT NOT NULL REFERENCES "customers"("id"),
         "surcharge" REAL NOT NULL,
         "date" TEXT NOT NULL
@@ -60,7 +60,7 @@ function main(): void {
 
     database.exec(`
       CREATE TABLE IF NOT EXISTS "quoteLines" (
-        "quoteId" INTEGER NOT NULL REFERENCES "quotes"("id"),
+        "quoteId" TEXT NOT NULL REFERENCES "quotes"("id"),
         "type" TEXT NOT NULL CHECK ("type" IN ('equipment', 'labor', 'other')),
         "ordering" INTEGER NOT NULL,
         "price" REAL NOT NULL,

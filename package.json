@@ -8,8 +8,8 @@
   "main": "index.ts",
   "scripts": {
     "initDatabase": "node --experimental-sqlite ./initDatabase.ts",
-    "importJsons": "node --experimental-sqlite ./importJsons.ts",
-    "server": "node --experimental-sqlite ./server.ts",
+    "importJsons": "node ./importJsons.ts",
+    "server": "node ./server.ts",
     "client:dev": "npm --prefix ./client run dev",
     "client:build": "npm --prefix ./client run build"
   },
@@ -17,7 +17,10 @@
     "@types/node": "^25.6.0"
   },
   "dependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/express": "^5.0.6",
+    "better-sqlite3": "^12.9.0",
+    "drizzle-orm": "^0.45.2",
     "express": "^5.2.1"
   }
 }

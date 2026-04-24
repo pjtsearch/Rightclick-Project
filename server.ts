@@ -1,7 +1,12 @@
 import express, { type Response } from "express"
+import { asc, eq } from "drizzle-orm"
+import { randomUUID } from "node:crypto"
 import { existsSync } from "node:fs"
 import { resolve } from "node:path"
-import { DatabaseSync } from "node:sqlite"
+import { pathToFileURL } from "node:url"
+import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
+import { createDatabaseClient } from "./db/client.ts"
+import { customers, equipment, laborRates, quoteLines, quotes } from "./db/schema.ts"
 import type { Customer, Equipment, LaborRate, Quote, QuoteLine } from "./databaseTypes.ts"
 
 type QuoteWithDetails = Omit<Quote, "customer"> & {
@@ -9,7 +14,7 @@ type QuoteWithDetails = Omit<Quote, "customer"> & {
   lines: QuoteLine[]
 }
 
-type QuoteRow = Quote
+type AppDatabase = BetterSQLite3Database<typeof import("./db/schema.ts")>
 
 function getDbPathFromArg(): string {
   const outputPath = process.argv[2]
@@ -33,118 +38,40 @@ const emptyCustomer: Omit<Customer, "id"> = {
   lastServiceDate: null,
 }
 
-function mergeCustomer(input: Partial<Customer> & Pick<Customer, "id">, existing?: Customer): Customer {
-  return {
-    ...emptyCustomer,
-    ...existing,
-    ...input,
-    id: input.id,
-  }
-}
-
-function normalizeQuoteLines(lines: QuoteLine[], quoteId: number): QuoteLine[] {
-  return lines.map((line) => ({
-    quoteId,
-    ordering: line.ordering,
-    type: line.type,
-    price: line.price,
-    equipmentId: line.type === "equipment" ? line.equipmentId : null,
-    laborId: line.type === "labor" ? line.laborId : null,
-    hours: line.type === "labor" ? line.hours : null,
-    name: line.type === "other" ? line.name : null,
-  }))
-}
-
-export function createDatabaseHelpers(database: DatabaseSync) {
-  database.exec("PRAGMA foreign_keys = ON;")
-
-  const statements = {
-    getCustomer: database.prepare(`SELECT * FROM "customers" WHERE "id" = ?`),
-    getAllCustomers: database.prepare(`SELECT * FROM "customers" ORDER BY "id"`),
-    upsertCustomer: database.prepare(`
-      INSERT INTO "customers" (
-        "id",
-        "name",
-        "address",
-        "phone",
-        "propertyType",
-        "squareFootage",
-        "systemType",
-        "systemAge",
-        "lastServiceDate"
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT("id") DO UPDATE SET
-        "name" = excluded."name",
-        "address" = excluded."address",
-        "phone" = excluded."phone",
-        "propertyType" = excluded."propertyType",
-        "squareFootage" = excluded."squareFootage",
-        "systemType" = excluded."systemType",
-        "systemAge" = excluded."systemAge",
-        "lastServiceDate" = excluded."lastServiceDate";
-    `),
-    deleteCustomer: database.prepare(`DELETE FROM "customers" WHERE "id" = ?`),
-    getAllEquipment: database.prepare(`SELECT * FROM "equipment" ORDER BY "id"`),
-    getAllLaborRates: database.prepare(`SELECT * FROM "laborRates" ORDER BY "jobId"`),
-    getQuote: database.prepare(`SELECT * FROM "quotes" WHERE "id" = ?`),
-    getAllQuotes: database.prepare(`SELECT * FROM "quotes" ORDER BY "id"`),
-    getQuoteLinesForQuote: database.prepare(`SELECT * FROM "quoteLines" WHERE "quoteId" = ? ORDER BY "ordering"`),
-    getQuoteLinesForQuotes: database.prepare(
-      `SELECT * FROM "quoteLines" WHERE "quoteId" IN (SELECT "id" FROM "quotes") ORDER BY "quoteId", "ordering"`,
-    ),
-    insertQuote: database.prepare(`
-      INSERT INTO "quotes" ("id", "customer", "surcharge", "date")
-      VALUES (?, ?, ?, ?)
-      RETURNING *;
-    `),
-    updateQuote: database.prepare(`
-      UPDATE "quotes"
-      SET "customer" = ?, "surcharge" = ?, "date" = ?
-      WHERE "id" = ?
-      RETURNING *;
-    `),
-    deleteQuoteLines: database.prepare(`DELETE FROM "quoteLines" WHERE "quoteId" = ?`),
-    insertQuoteLine: database.prepare(`
-      INSERT INTO "quoteLines" (
-        "quoteId",
-        "type",
-        "ordering",
-        "price",
-        "equipmentId",
-        "laborId",
-        "hours",
-        "name"
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-    `),
-    deleteQuote: database.prepare(`DELETE FROM "quotes" WHERE "id" = ?`),
+export function createDatabaseHelpers(db: AppDatabase) {
+  function getCustomerByIdFrom(database: AppDatabase, id: string): Customer | null {
+    const row = database.select().from(customers).where(eq(customers.id, id)).get()
+    return row ?? null
   }
 
   function getCustomerById(id: string): Customer | null {
-    return (statements.getCustomer.get(id) as Customer | undefined) ?? null
+    return getCustomerByIdFrom(db, id)
   }
 
   function getAllCustomers(): Customer[] {
-    return statements.getAllCustomers.all() as Customer[]
+    return db.select().from(customers).orderBy(asc(customers.id)).all()
   }
 
-  function persistCustomer(record: Customer): Customer {
-    statements.upsertCustomer.run(
-      record.id,
-      record.name,
-      record.address,
-      record.phone,
-      record.propertyType,
-      record.squareFootage,
-      record.systemType,
-      record.systemAge,
-      record.lastServiceDate,
-    )
+  function upsertCustomer(database: AppDatabase, record: Customer): Customer {
+    database
+      .insert(customers)
+      .values(record)
+      .onConflictDoUpdate({
+        target: customers.id,
+        set: {
+          name: record.name,
+          address: record.address,
+          phone: record.phone,
+          propertyType: record.propertyType,
+          squareFootage: record.squareFootage,
+          systemType: record.systemType,
+          systemAge: record.systemAge,
+          lastServiceDate: record.lastServiceDate,
+        },
+      })
+      .run()
 
     return record
-  }
-
-  function saveCustomer(input: Partial<Customer> & Pick<Customer, "id">): Customer {
-    return persistCustomer(mergeCustomer(input, getCustomerById(input.id) ?? undefined))
   }
 
   function createCustomer(input: Customer): Customer {
@@ -152,164 +79,113 @@ export function createDatabaseHelpers(database: DatabaseSync) {
       throw new Error(`Customer ${input.id} already exists.`)
     }
 
-    return persistCustomer(input)
+    return upsertCustomer(db, input)
   }
 
-  function updateCustomer(id: string, input: Partial<Customer> & Pick<Customer, "id">): Customer | null {
-    const existing = getCustomerById(id)
+  function updateCustomer(id: string, input: Customer): Customer | null {
+    const existing = getCustomerByIdFrom(db, id)
 
     if (!existing) {
       return null
     }
 
-    return persistCustomer(mergeCustomer({ ...input, id }, existing))
+    return upsertCustomer(db, input)
   }
 
   function deleteCustomerById(id: string): boolean {
-    const result = statements.deleteCustomer.run(id)
-    return Number(result.changes) > 0
+    const result = db.delete(customers).where(eq(customers.id, id)).run()
+    return result.changes > 0
   }
 
   function getAllEquipment(): Equipment[] {
-    return statements.getAllEquipment.all() as Equipment[]
+    return db.select().from(equipment).orderBy(asc(equipment.id)).all()
   }
 
   function getAllLaborRates(): LaborRate[] {
-    return statements.getAllLaborRates.all() as LaborRate[]
+    return db.select().from(laborRates).orderBy(asc(laborRates.jobId)).all()
   }
 
-  function hydrateQuote(quote: QuoteRow): QuoteWithDetails {
-    const customer = getCustomerById(quote.customer)
+  function getQuoteByIdFrom(database: AppDatabase, id: string): QuoteWithDetails | null {
+    const row = database.query.quotes
+      .findFirst({
+        where: eq(quotes.id, id),
+        with: {
+          customer: true,
+          lines: {
+            orderBy: (fields, { asc }) => [asc(fields.ordering)],
+          },
+        },
+      })
+      .sync()
 
-    if (!customer) {
-      throw new Error(`Quote ${quote.id} references missing customer ${quote.customer}.`)
-    }
-
-    const lines = statements.getQuoteLinesForQuote.all(quote.id) as QuoteLine[]
-
-    return {
-      id: quote.id,
-      surcharge: quote.surcharge,
-      date: quote.date,
-      customer,
-      lines,
-    }
+    return row || null
   }
 
-  function getQuoteById(id: number): QuoteWithDetails | null {
-    const quote = (statements.getQuote.get(id) as QuoteRow | undefined) ?? null
-    return quote ? hydrateQuote(quote) : null
+  function getQuoteById(id: string): QuoteWithDetails | null {
+    return getQuoteByIdFrom(db, id)
   }
 
   function getAllQuotes(): QuoteWithDetails[] {
-    const quotes = statements.getAllQuotes.all() as QuoteRow[]
-    const customers = new Map(getAllCustomers().map((customer) => [customer.id, customer]))
-    const lines = statements.getQuoteLinesForQuotes.all() as QuoteLine[]
-    const linesByQuoteId = new Map<number, QuoteLine[]>()
-
-    for (const line of lines) {
-      const quoteLines = linesByQuoteId.get(line.quoteId)
-      if (quoteLines) {
-        quoteLines.push(line)
-      } else {
-        linesByQuoteId.set(line.quoteId, [line])
-      }
-    }
-
-    return quotes.map((quote) => {
-      const customer = customers.get(quote.customer)
-
-      if (!customer) {
-        throw new Error(`Quote ${quote.id} references missing customer ${quote.customer}.`)
-      }
-
-      return {
-        id: quote.id,
-        surcharge: quote.surcharge,
-        date: quote.date,
-        customer,
-        lines: linesByQuoteId.get(quote.id) ?? [],
-      }
-    })
-  }
-
-  function replaceQuoteLines(quoteId: number, lines: QuoteLine[]): void {
-    const seen = new Set<number>()
-
-    for (const line of lines) {
-      if (seen.has(line.ordering)) {
-        throw new Error(`Quote ${quoteId} contains duplicate line ordering ${line.ordering}.`)
-      }
-
-      seen.add(line.ordering)
-    }
-
-    statements.deleteQuoteLines.run(quoteId)
-
-    for (const line of lines) {
-      statements.insertQuoteLine.run(
-        line.quoteId,
-        line.type,
-        line.ordering,
-        line.price,
-        line.equipmentId,
-        line.laborId,
-        line.hours,
-        line.name,
-      )
-    }
-  }
-
-  function withTransaction<T>(work: () => T): T {
-    database.exec("BEGIN")
-
-    try {
-      const result = work()
-      database.exec("COMMIT")
-      return result
-    } catch (error) {
-      database.exec("ROLLBACK")
-      throw error
-    }
+    return db.query.quotes
+      .findMany({
+        orderBy: (fields, { asc }) => [asc(fields.id)],
+        with: {
+          customer: true,
+          lines: {
+            orderBy: (fields, { asc }) => [asc(fields.ordering)],
+          },
+        },
+      })
+      .sync()
   }
 
   function createQuote(payload: QuoteWithDetails): QuoteWithDetails {
-    return withTransaction(() => {
-      const customer = saveCustomer(payload.customer)
-      const inserted = statements.insertQuote.get(
-        payload.id ?? null,
-        customer.id,
-        payload.surcharge,
-        payload.date,
-      ) as QuoteRow
+    return db.transaction((tx) => {
+      const transactionDb = tx as AppDatabase
+      const customer = upsertCustomer(transactionDb, payload.customer)
+      const quoteId = payload.id || randomUUID()
+      const savedRow = transactionDb
+        .insert(quotes)
+        .values({
+          id: quoteId,
+          customer: customer.id,
+          surcharge: payload.surcharge,
+          date: payload.date,
+        })
+        .returning()
+        .get()
 
-      replaceQuoteLines(inserted.id, normalizeQuoteLines(payload.lines, inserted.id))
-
-      return hydrateQuote(inserted)
-    })
-  }
-
-  function updateQuote(id: number, payload: QuoteWithDetails): QuoteWithDetails | null {
-    return withTransaction(() => {
-      const existing = (statements.getQuote.get(id) as QuoteRow | undefined) ?? null
-      if (!existing) {
-        return null
+      for (const line of payload.lines) {
+        tx
+          .insert(quoteLines)
+          .values({
+            quoteId: savedRow.id,
+            ordering: line.ordering,
+            type: line.type,
+            price: line.price,
+            equipmentId: line.type === "equipment" ? line.equipmentId : null,
+            laborId: line.type === "labor" ? line.laborId : null,
+            hours: line.type === "labor" ? line.hours : null,
+            name: line.type === "other" ? line.name : null,
+          })
+          .run()
       }
 
-      const customer = saveCustomer(payload.customer)
-      const updated = statements.updateQuote.get(customer.id, payload.surcharge, payload.date, id) as QuoteRow
+      const quote = getQuoteByIdFrom(transactionDb, savedRow.id)
 
-      replaceQuoteLines(id, normalizeQuoteLines(payload.lines, id))
+      if (!quote) {
+        throw new Error(`Quote ${savedRow.id} could not be loaded after creation.`)
+      }
 
-      return hydrateQuote(updated)
+      return quote
     })
   }
 
-  function deleteQuoteById(id: number): boolean {
-    return withTransaction(() => {
-      statements.deleteQuoteLines.run(id)
-      const result = statements.deleteQuote.run(id)
-      return Number(result.changes) > 0
+  function deleteQuoteById(id: string): boolean {
+    return db.transaction((tx) => {
+      tx.delete(quoteLines).where(eq(quoteLines.quoteId, id)).run()
+      const result = tx.delete(quotes).where(eq(quotes.id, id)).run()
+      return result.changes > 0
     })
   }
 
@@ -317,7 +193,6 @@ export function createDatabaseHelpers(database: DatabaseSync) {
     getCustomerById,
     getAllCustomers,
     createCustomer,
-    saveCustomer,
     updateCustomer,
     deleteCustomerById,
     getAllEquipment,
@@ -325,7 +200,6 @@ export function createDatabaseHelpers(database: DatabaseSync) {
     getQuoteById,
     getAllQuotes,
     createQuote,
-    updateQuote,
     deleteQuoteById,
   }
 }
@@ -341,19 +215,21 @@ function sendConflict(response: Response, error: unknown): void {
 }
 
 export function createApp(databasePath: string) {
-  const database = new DatabaseSync(databasePath)
-  const db = createDatabaseHelpers(database)
+  const { client, db } = createDatabaseClient(databasePath)
+  const helpers = createDatabaseHelpers(db)
   const app = express()
+  const api = express.Router()
   const clientDistPath = resolve(process.cwd(), "client/dist")
 
   app.use(express.json())
+  app.use("/api", api)
 
-  app.get("/customers", (_request, response) => {
-    response.json(db.getAllCustomers())
+  api.get("/customers", (_request, response) => {
+    response.json(helpers.getAllCustomers())
   })
 
-  app.get("/customers/:id", (request, response) => {
-    const customer = db.getCustomerById(request.params.id)
+  api.get("/customers/:id", (request, response) => {
+    const customer = helpers.getCustomerById(request.params.id)
 
     if (!customer) {
       sendNotFound(response, `Customer ${request.params.id} was not found.`)
@@ -363,20 +239,17 @@ export function createApp(databasePath: string) {
     response.json(customer)
   })
 
-  app.post("/customers", (request, response) => {
+  api.post("/customers", (request, response) => {
     try {
-      const customer = db.createCustomer(request.body as Customer)
+      const customer = helpers.createCustomer(request.body as Customer)
       response.status(201).json(customer)
     } catch (error) {
       sendConflict(response, error)
     }
   })
 
-  app.put("/customers/:id", (request, response) => {
-    const customer = db.updateCustomer(request.params.id, {
-      ...(request.body as Partial<Customer>),
-      id: request.params.id,
-    })
+  api.put("/customers/:id", (request, response) => {
+    const customer = helpers.updateCustomer(request.params.id, request.body as Customer)
 
     if (!customer) {
       sendNotFound(response, `Customer ${request.params.id} was not found.`)
@@ -386,9 +259,9 @@ export function createApp(databasePath: string) {
     response.json(customer)
   })
 
-  app.delete("/customers/:id", (request, response) => {
+  api.delete("/customers/:id", (request, response) => {
     try {
-      const deleted = db.deleteCustomerById(request.params.id)
+      const deleted = helpers.deleteCustomerById(request.params.id)
 
       if (!deleted) {
         sendNotFound(response, `Customer ${request.params.id} was not found.`)
@@ -401,27 +274,27 @@ export function createApp(databasePath: string) {
     }
   })
 
-  app.get("/equipment", (_request, response) => {
-    response.json(db.getAllEquipment())
+  api.get("/equipment", (_request, response) => {
+    response.json(helpers.getAllEquipment())
   })
 
-  app.get("/laborRates", (_request, response) => {
-    response.json(db.getAllLaborRates())
+  api.get("/laborRates", (_request, response) => {
+    response.json(helpers.getAllLaborRates())
   })
 
-  app.get("/quotes", (_request, response) => {
+  api.get("/quotes", (_request, response) => {
     try {
-      response.json(db.getAllQuotes())
+      response.json(helpers.getAllQuotes())
     } catch (error) {
       sendConflict(response, error)
     }
   })
 
-  app.get("/quotes/:id", (request, response) => {
-    const id = Number(request.params.id)
+  api.get("/quotes/:id", (request, response) => {
+    const id = request.params.id
 
     try {
-      const quote = db.getQuoteById(id)
+      const quote = helpers.getQuoteById(id)
 
       if (!quote) {
         sendNotFound(response, `Quote ${id} was not found.`)
@@ -434,37 +307,20 @@ export function createApp(databasePath: string) {
     }
   })
 
-  app.post("/quotes", (request, response) => {
+  api.post("/quotes", (request, response) => {
     try {
-      const quote = db.createQuote(request.body as QuoteWithDetails)
+      const quote = helpers.createQuote(request.body as QuoteWithDetails)
       response.status(201).json(quote)
     } catch (error) {
       sendConflict(response, error)
     }
   })
 
-  app.put("/quotes/:id", (request, response) => {
-    const id = Number(request.params.id)
+  api.delete("/quotes/:id", (request, response) => {
+    const id = request.params.id
 
     try {
-      const quote = db.updateQuote(id, request.body as QuoteWithDetails)
-
-      if (!quote) {
-        sendNotFound(response, `Quote ${id} was not found.`)
-        return
-      }
-
-      response.json(quote)
-    } catch (error) {
-      sendConflict(response, error)
-    }
-  })
-
-  app.delete("/quotes/:id", (request, response) => {
-    const id = Number(request.params.id)
-
-    try {
-      const deleted = db.deleteQuoteById(id)
+      const deleted = helpers.deleteQuoteById(id)
 
       if (!deleted) {
         sendNotFound(response, `Quote ${id} was not found.`)
@@ -484,7 +340,7 @@ export function createApp(databasePath: string) {
     })
   }
 
-  return { app, database }
+  return { app, client }
 }
 
 function main(): void {
@@ -496,4 +352,9 @@ function main(): void {
   })
 }
 
-main()
+const isMainModule =
+  typeof process.argv[1] === "string" && import.meta.url === pathToFileURL(process.argv[1]).href
+
+if (isMainModule) {
+  main()
+}

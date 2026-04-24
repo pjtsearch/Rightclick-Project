@@ -1,6 +1,8 @@
+import { createHash } from "node:crypto"
 import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
-import { DatabaseSync } from "node:sqlite"
+import { createDatabaseClient } from "./db/client.ts"
+import { customers, equipment, laborRates } from "./db/schema.ts"
 
 type CustomerJson = {
   id: string
@@ -52,6 +54,14 @@ function createLaborName(jobId: string): string {
   return titleCase(jobId.replace(/-/g, " "))
 }
 
+function createDeterministicUuid(seed: string): string {
+  const hex = createHash("md5").update(seed).digest("hex").split("")
+  hex[12] = "5"
+  hex[16] = ((Number.parseInt(hex[16], 16) & 0x3) | 0x8).toString(16)
+
+  return `${hex.slice(0, 8).join("")}-${hex.slice(8, 12).join("")}-${hex.slice(12, 16).join("")}-${hex.slice(16, 20).join("")}-${hex.slice(20, 32).join("")}`
+}
+
 async function readJsonFile<T>(relativePath: string): Promise<T> {
   return JSON.parse(await readFile(new URL(relativePath, import.meta.url), "utf8")) as T
 }
@@ -64,116 +74,98 @@ async function main(): Promise<void> {
     process.exit(1)
   }
 
-  const [customers, equipment, laborRates] = await Promise.all([
+  const [customerData, equipmentData, laborRateData] = await Promise.all([
     readJsonFile<CustomerJson[]>("./data/customers.json"),
     readJsonFile<EquipmentJson[]>("./data/equipment.json"),
     readJsonFile<LaborRateJson[]>("./data/labor_rates.json"),
   ])
 
-  const database = new DatabaseSync(resolve(process.cwd(), outputPath))
+  const { client, db } = createDatabaseClient(resolve(process.cwd(), outputPath))
 
   try {
-    database.exec("PRAGMA foreign_keys = ON;")
-    database.exec("BEGIN TRANSACTION;")
+    db.transaction((tx) => {
+      for (const customer of customerData) {
+        const customerId = createDeterministicUuid(`customer:${customer.id}`)
 
-    const insertCustomer = database.prepare(`
-      INSERT INTO "customers" (
-        "id",
-        "name",
-        "address",
-        "phone",
-        "propertyType",
-        "squareFootage",
-        "systemType",
-        "systemAge",
-        "lastServiceDate"
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT("id") DO UPDATE SET
-        "name" = excluded."name",
-        "address" = excluded."address",
-        "phone" = excluded."phone",
-        "propertyType" = excluded."propertyType",
-        "squareFootage" = excluded."squareFootage",
-        "systemType" = excluded."systemType",
-        "systemAge" = excluded."systemAge",
-        "lastServiceDate" = excluded."lastServiceDate";
-    `)
+        tx
+          .insert(customers)
+          .values({
+            id: customerId,
+            name: customer.name,
+            address: customer.address,
+            phone: customer.phone ?? null,
+            propertyType: customer.propertyType ?? customer.property_type ?? null,
+            squareFootage: customer.squareFootage ?? customer.sqft ?? null,
+            systemType: customer.systemType ?? null,
+            systemAge: customer.systemAge ?? null,
+            lastServiceDate: customer.lastServiceDate ?? null,
+          })
+          .onConflictDoUpdate({
+            target: customers.id,
+            set: {
+              name: customer.name,
+              address: customer.address,
+              phone: customer.phone ?? null,
+              propertyType: customer.propertyType ?? customer.property_type ?? null,
+              squareFootage: customer.squareFootage ?? customer.sqft ?? null,
+              systemType: customer.systemType ?? null,
+              systemAge: customer.systemAge ?? null,
+              lastServiceDate: customer.lastServiceDate ?? null,
+            },
+          })
+          .run()
+      }
 
-    const insertEquipment = database.prepare(`
-      INSERT INTO "equipment" (
-        "id",
-        "name",
-        "category",
-        "brand",
-        "modelNumber",
-        "baseCost"
-      ) VALUES (?, ?, ?, ?, ?, ?)
-      ON CONFLICT("id") DO UPDATE SET
-        "name" = excluded."name",
-        "category" = excluded."category",
-        "brand" = excluded."brand",
-        "modelNumber" = excluded."modelNumber",
-        "baseCost" = excluded."baseCost";
-    `)
+      for (const item of equipmentData) {
+        tx
+          .insert(equipment)
+          .values({
+            id: item.id,
+            name: item.name,
+            category: item.category,
+            brand: item.brand,
+            modelNumber: item.modelNumber,
+            baseCost: item.baseCost ?? item.base_cost ?? 0,
+          })
+          .onConflictDoUpdate({
+            target: equipment.id,
+            set: {
+              name: item.name,
+              category: item.category,
+              brand: item.brand,
+              modelNumber: item.modelNumber,
+              baseCost: item.baseCost ?? item.base_cost ?? 0,
+            },
+          })
+          .run()
+      }
 
-    const insertLaborRate = database.prepare(`
-      INSERT INTO "laborRates" (
-        "jobId",
-        "name",
-        "hourlyRate",
-        "estimatedHoursMin",
-        "estimatedHoursMax"
-      ) VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT("jobId") DO UPDATE SET
-        "name" = excluded."name",
-        "hourlyRate" = excluded."hourlyRate",
-        "estimatedHoursMin" = excluded."estimatedHoursMin",
-        "estimatedHoursMax" = excluded."estimatedHoursMax";
-    `)
+      for (const rate of laborRateData) {
+        const jobId = createLaborJobId(rate.jobType, rate.level)
 
-    for (const customer of customers) {
-      insertCustomer.run(
-        customer.id,
-        customer.name,
-        customer.address,
-        customer.phone ?? null,
-        customer.propertyType ?? customer.property_type ?? null,
-        customer.squareFootage ?? customer.sqft ?? null,
-        customer.systemType ?? null,
-        customer.systemAge ?? null,
-        customer.lastServiceDate ?? null,
-      )
-    }
-
-    for (const item of equipment) {
-      insertEquipment.run(
-        item.id,
-        item.name,
-        item.category,
-        item.brand,
-        item.modelNumber,
-        item.baseCost ?? item.base_cost!,
-      )
-    }
-
-    for (const rate of laborRates) {
-      const jobId = createLaborJobId(rate.jobType, rate.level)
-
-      insertLaborRate.run(
-        jobId,
-        createLaborName(jobId),
-        rate.hourlyRate,
-        rate.estimatedHours.min,
-        rate.estimatedHours.max,
-      )
-    }
-
-    database.exec("COMMIT;")
-  } catch (error) {
-    database.exec("ROLLBACK;")
-    throw error
+        tx
+          .insert(laborRates)
+          .values({
+            jobId,
+            name: createLaborName(jobId),
+            hourlyRate: rate.hourlyRate,
+            estimatedHoursMin: rate.estimatedHours.min,
+            estimatedHoursMax: rate.estimatedHours.max,
+          })
+          .onConflictDoUpdate({
+            target: laborRates.jobId,
+            set: {
+              name: createLaborName(jobId),
+              hourlyRate: rate.hourlyRate,
+              estimatedHoursMin: rate.estimatedHours.min,
+              estimatedHoursMax: rate.estimatedHours.max,
+            },
+          })
+          .run()
+      }
+    })
   } finally {
-    database.close()
+    client.close()
   }
 }
 
