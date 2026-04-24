@@ -1,0 +1,13 @@
+{
+  "name": "right-click-project",
+  "version": "1.0.0",
+  "description": "",
+  "license": "MIT",
+  "author": "PJTSearch",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {},
+  "devDependencies": {
+    "@types/node": "^25.6.0"
+  }
+}
