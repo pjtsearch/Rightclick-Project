@@ -6,13 +6,8 @@ import { resolve } from "node:path"
 import { pathToFileURL } from "node:url"
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { createDatabaseClient } from "./db/client.ts"
-import { customers, equipment, laborRates, quoteLines, quotes } from "./db/schema.ts"
-import type { Customer, Equipment, LaborRate, Quote, QuoteLine } from "./databaseTypes.ts"
-
-type QuoteWithDetails = Omit<Quote, "customer"> & {
-  customer: Customer
-  lines: QuoteLine[]
-}
+import { customers, equipment, laborRates, quoteEquipment, quoteLabor, quotes } from "./db/schema.ts"
+import type { Customer, Equipment, LaborRate, QuoteWithDetails } from "./databaseTypes.ts"
 
 type AppDatabase = BetterSQLite3Database<typeof import("./db/schema.ts")>
 
@@ -111,8 +106,11 @@ export function createDatabaseHelpers(db: AppDatabase) {
         where: eq(quotes.id, id),
         with: {
           customer: true,
-          lines: {
-            orderBy: (fields, { asc }) => [asc(fields.ordering)],
+          equipments: {
+            orderBy: (fields, { asc }) => [asc(fields.equipmentId)],
+          },
+          labors: {
+            orderBy: (fields, { asc }) => [asc(fields.laborId)],
           },
         },
       })
@@ -131,8 +129,11 @@ export function createDatabaseHelpers(db: AppDatabase) {
         orderBy: (fields, { asc }) => [asc(fields.id)],
         with: {
           customer: true,
-          lines: {
-            orderBy: (fields, { asc }) => [asc(fields.ordering)],
+          equipments: {
+            orderBy: (fields, { asc }) => [asc(fields.equipmentId)],
+          },
+          labors: {
+            orderBy: (fields, { asc }) => [asc(fields.laborId)],
           },
         },
       })
@@ -144,6 +145,20 @@ export function createDatabaseHelpers(db: AppDatabase) {
       const transactionDb = tx as AppDatabase
       const customer = upsertCustomer(transactionDb, payload.customer)
       const quoteId = payload.id || randomUUID()
+      const equipmentById = new Map(
+        transactionDb
+          .select()
+          .from(equipment)
+          .all()
+          .map((item) => [item.id, item] as const),
+      )
+      const laborRateById = new Map(
+        transactionDb
+          .select()
+          .from(laborRates)
+          .all()
+          .map((item) => [item.jobId, item] as const),
+      )
       const savedRow = transactionDb
         .insert(quotes)
         .values({
@@ -155,18 +170,44 @@ export function createDatabaseHelpers(db: AppDatabase) {
         .returning()
         .get()
 
-      for (const line of payload.lines) {
-        tx
-          .insert(quoteLines)
+      for (const equipmentSelection of payload.equipments) {
+        if (equipmentSelection.quantity <= 0) {
+          continue
+        }
+
+        const equipmentItem = equipmentById.get(equipmentSelection.equipmentId)
+
+        if (!equipmentItem) {
+          throw new Error(`Equipment ${equipmentSelection.equipmentId} was not found.`)
+        }
+
+        tx.insert(quoteEquipment)
           .values({
             quoteId: savedRow.id,
-            ordering: line.ordering,
-            type: line.type,
-            price: line.price,
-            equipmentId: line.type === "equipment" ? line.equipmentId : null,
-            laborId: line.type === "labor" ? line.laborId : null,
-            hours: line.type === "labor" ? line.hours : null,
-            name: line.type === "other" ? line.name : null,
+            equipmentId: equipmentSelection.equipmentId,
+            quantity: equipmentSelection.quantity,
+            price: equipmentItem.baseCost,
+          })
+          .run()
+      }
+
+      for (const laborSelection of payload.labors) {
+        if (laborSelection.hours <= 0) {
+          continue
+        }
+
+        const laborRateItem = laborRateById.get(laborSelection.laborId)
+
+        if (!laborRateItem) {
+          throw new Error(`Labor rate ${laborSelection.laborId} was not found.`)
+        }
+
+        tx.insert(quoteLabor)
+          .values({
+            quoteId: savedRow.id,
+            laborId: laborSelection.laborId,
+            hours: laborSelection.hours,
+            price: laborRateItem.hourlyRate,
           })
           .run()
       }
@@ -183,7 +224,8 @@ export function createDatabaseHelpers(db: AppDatabase) {
 
   function deleteQuoteById(id: string): boolean {
     return db.transaction((tx) => {
-      tx.delete(quoteLines).where(eq(quoteLines.quoteId, id)).run()
+      tx.delete(quoteEquipment).where(eq(quoteEquipment.quoteId, id)).run()
+      tx.delete(quoteLabor).where(eq(quoteLabor.quoteId, id)).run()
       const result = tx.delete(quotes).where(eq(quotes.id, id)).run()
       return result.changes > 0
     })

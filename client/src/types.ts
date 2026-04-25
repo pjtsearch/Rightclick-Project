@@ -10,23 +10,46 @@ export type Customer = {
   lastServiceDate: string | null
 }
 
-export type QuoteLineType = "equipment" | "labor" | "other"
-
-export type QuoteLine = {
-  quoteId: number
-  type: QuoteLineType
-  ordering: number
-  price: number
-  equipmentId: string | null
-  laborId: string | null
-  hours: number | null
-  name: string | null
+export type Equipment = {
+  id: string
+  name: string
+  category: string
+  brand: string
+  modelNumber: string
+  baseCost: number
 }
 
-export type QuoteWithDetails = {
-  id: number
+export type LaborRate = {
+  jobId: string
+  name: string
+  hourlyRate: number
+  estimatedHoursMin: number
+  estimatedHoursMax: number
+}
+
+export type Quote = {
+  id: string
+  customer: string
   surcharge: number
   date: string
+}
+
+export type QuoteEquipment = {
+  quoteId: string
+  equipmentId: string
+  quantity: number
+  price: number
+}
+
+export type QuoteLabor = {
+  quoteId: string
+  laborId: string
+  hours: number
+  price: number
+}
+
+export type QuoteWithDetails = Omit<Quote, "customer"> & {
   customer: Customer
-  lines: QuoteLine[]
+  equipments: QuoteEquipment[]
+  labors: QuoteLabor[]
 }

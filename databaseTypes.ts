@@ -1,5 +1,3 @@
-export type QuoteLineType = "equipment" | "labor" | "other";
-
 export type Customer = {
   id: string;
   name: string;
@@ -36,13 +34,22 @@ export type Quote = {
   date: string;
 };
 
-export type QuoteLine = {
-  quoteId: string;
-  type: QuoteLineType;
-  ordering: number;
-  price: number;
-  equipmentId: string | null;
-  laborId: string | null;
-  hours: number | null;
-  name: string | null;
-};
+export type QuoteEquipment = {
+  quoteId: string
+  equipmentId: string
+  quantity: number
+  price: number
+}
+
+export type QuoteLabor = {
+  quoteId: string
+  laborId: string
+  hours: number
+  price: number
+}
+
+export type QuoteWithDetails = Omit<Quote, "customer"> & {
+  customer: Customer
+  equipments: QuoteEquipment[]
+  labors: QuoteLabor[]
+}

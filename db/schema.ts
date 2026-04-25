@@ -37,28 +37,31 @@ export const quotes = sqliteTable("quotes", {
   date: text("date").notNull(),
 })
 
-export const quoteLines = sqliteTable(
-  "quoteLines",
+export const quoteEquipment = sqliteTable(
+  "quoteEquipment",
   {
     quoteId: text("quoteId").notNull().references(() => quotes.id),
-    type: text("type", { enum: ["equipment", "labor", "other"] }).notNull(),
-    ordering: integer("ordering").notNull(),
+    equipmentId: text("equipmentId").notNull().references(() => equipment.id),
+    quantity: integer("quantity").notNull(),
     price: real("price").notNull(),
-    equipmentId: text("equipmentId").references(() => equipment.id),
-    laborId: text("laborId").references(() => laborRates.jobId),
-    hours: real("hours"),
-    name: text("name"),
   },
   (table) => [
-    primaryKey({ columns: [table.quoteId, table.ordering] }),
-    check(
-      "quote_lines_type_check",
-      sql`(
-        (${table.type} = 'equipment' AND ${table.equipmentId} IS NOT NULL AND ${table.laborId} IS NULL AND ${table.hours} IS NULL AND ${table.name} IS NULL) OR
-        (${table.type} = 'labor' AND ${table.equipmentId} IS NULL AND ${table.laborId} IS NOT NULL AND ${table.hours} IS NOT NULL AND ${table.name} IS NULL) OR
-        (${table.type} = 'other' AND ${table.equipmentId} IS NULL AND ${table.laborId} IS NULL AND ${table.hours} IS NULL AND ${table.name} IS NOT NULL)
-      )`,
-    ),
+    primaryKey({ columns: [table.quoteId, table.equipmentId] }),
+    check("quote_equipment_quantity_check", sql`${table.quantity} > 0`),
+  ],
+)
+
+export const quoteLabor = sqliteTable(
+  "quoteLabor",
+  {
+    quoteId: text("quoteId").notNull().references(() => quotes.id),
+    laborId: text("laborId").notNull().references(() => laborRates.jobId),
+    hours: real("hours").notNull(),
+    price: real("price").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.quoteId, table.laborId] }),
+    check("quote_labor_hours_check", sql`${table.hours} > 0`),
   ],
 )
 
@@ -71,12 +74,28 @@ export const quotesRelations = relations(quotes, ({ one, many }) => ({
     fields: [quotes.customer],
     references: [customers.id],
   }),
-  lines: many(quoteLines),
+  equipments: many(quoteEquipment),
+  labors: many(quoteLabor),
 }))
 
-export const quoteLinesRelations = relations(quoteLines, ({ one }) => ({
+export const quoteEquipmentRelations = relations(quoteEquipment, ({ one }) => ({
   quote: one(quotes, {
-    fields: [quoteLines.quoteId],
+    fields: [quoteEquipment.quoteId],
     references: [quotes.id],
+  }),
+  equipment: one(equipment, {
+    fields: [quoteEquipment.equipmentId],
+    references: [equipment.id],
+  }),
+}))
+
+export const quoteLaborRelations = relations(quoteLabor, ({ one }) => ({
+  quote: one(quotes, {
+    fields: [quoteLabor.quoteId],
+    references: [quotes.id],
+  }),
+  laborRate: one(laborRates, {
+    fields: [quoteLabor.laborId],
+    references: [laborRates.jobId],
   }),
 }))
