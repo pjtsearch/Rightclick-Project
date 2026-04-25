@@ -1,0 +1,169 @@
+import Fuse from "fuse.js"
+import { LitElement, css, html } from "lit"
+import "./add-quote-new-customer-dialog.ts"
+import { fetchCustomers } from "./api.ts"
+import { navigate } from "./navigation.ts"
+import type { Customer } from "./types.ts"
+
+export class AddQuoteCustomerStage extends LitElement {
+  static properties = {
+    customer: { attribute: false },
+    customers: { state: true },
+    query: { state: true },
+    loading: { state: true },
+    newDialogIsOpen: { state: true },
+  }
+
+  static styles = css`
+    main {
+      margin-top: 64px;
+    }
+
+    .search {
+      position: sticky;
+      top: 64px;
+      z-index: 10;
+    }
+
+    .fab {
+      position: fixed;
+      right: 1rem;
+      bottom: calc(1rem + env(safe-area-inset-bottom));
+      z-index: 20;
+    }
+  `
+
+  customer: Customer = {
+    id: "",
+    name: "",
+    address: "",
+    phone: null,
+    propertyType: null,
+    squareFootage: null,
+    systemType: null,
+    systemAge: null,
+    lastServiceDate: null,
+  }
+  private customers: Customer[] = []
+  private query = ""
+  private loading = true
+  private newDialogIsOpen = false
+
+  connectedCallback(): void {
+    super.connectedCallback()
+    void this.loadCustomers()
+  }
+
+  private emit(type: string, detail?: unknown): void {
+    this.dispatchEvent(new CustomEvent(type, { detail, bubbles: true, composed: true }))
+  }
+
+  private async loadCustomers(): Promise<void> {
+    this.loading = true
+
+    try {
+      this.customers = await fetchCustomers()
+    } finally {
+      this.loading = false
+    }
+  }
+
+  private customerFuse(): Fuse<Customer> {
+    return new Fuse(this.customers, {
+      threshold: 0.35,
+      keys: [
+        "id",
+        "name",
+        "address",
+        "phone",
+        "propertyType",
+        "squareFootage",
+        "systemType",
+        "systemAge",
+        "lastServiceDate",
+      ],
+    })
+  }
+
+  private filteredCustomers(): Customer[] {
+    return this.query
+      ? this.customerFuse()
+          .search(this.query)
+          .map((result) => result.item)
+      : this.customers
+  }
+
+  private selectCustomer(customer: Customer): void {
+    this.emit("change", customer)
+    this.emit("continue")
+  }
+
+  render() {
+    if (this.loading) {
+      return html`
+        <mdui-top-app-bar>
+          <mdui-top-app-bar-title>Choose Customer</mdui-top-app-bar-title>
+        </mdui-top-app-bar>
+
+        <main>
+          <mdui-card style="padding: 24px; text-align: center;">
+            <mdui-circular-progress indeterminate></mdui-circular-progress>
+          </mdui-card>
+        </main>
+      `
+    }
+
+    return html`
+      <mdui-top-app-bar>
+        <mdui-button-icon icon="arrow_back" @click=${() => navigate("/")}></mdui-button-icon>
+        <mdui-top-app-bar-title>Choose Customer</mdui-top-app-bar-title>
+      </mdui-top-app-bar>
+
+      <main>
+        ${this.loading
+          ? html`<mdui-circular-progress indeterminate></mdui-circular-progress> `
+          : html`
+              <mdui-text-field
+                class="search"
+                icon="search"
+                label="Search customers"
+                .value=${this.query}
+                @input=${(event: Event) => {
+                  this.query = (event.target as HTMLInputElement).value
+                }}
+              ></mdui-text-field>
+
+              <mdui-list class="customers-list">
+                ${this.filteredCustomers().map(
+                  (customer) => html`
+                    <mdui-list-item @click=${() => this.selectCustomer(customer)}>
+                      ${customer.name}
+                      <div slot="description">
+                        ${[customer.address, customer.systemType].filter(Boolean).join(" • ")}
+                      </div>
+                    </mdui-list-item>
+                  `,
+                )}
+              </mdui-list>
+            `}
+      </main>
+
+      <mdui-fab class="fab" extended icon="person_add" @click=${() => (this.newDialogIsOpen = true)}>
+        New Customer
+      </mdui-fab>
+
+      <add-quote-new-customer-dialog
+        .open=${this.newDialogIsOpen}
+        @close=${() => {
+          this.newDialogIsOpen = false
+        }}
+        @confirm=${(event: CustomEvent<Customer>) => {
+          this.newDialogIsOpen = false
+          this.selectCustomer(event.detail)
+        }}
+      ></add-quote-new-customer-dialog>
+    `
+  }
+}
+
+customElements.define("add-quote-customer-stage", AddQuoteCustomerStage)

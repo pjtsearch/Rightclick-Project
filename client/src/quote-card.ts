@@ -1,5 +1,6 @@
 import { LitElement, css, html } from "lit"
-import type { QuoteLine, QuoteWithDetails } from "./types.ts"
+import type { QuoteWithDetails } from "./types.ts"
+import { getQuoteTotal } from "./quote-totals.ts"
 
 export class QuoteCard extends LitElement {
   static properties = {
@@ -10,6 +11,12 @@ export class QuoteCard extends LitElement {
     :host {
       display: block;
       margin-bottom: 1rem;
+    }
+
+    mdui-card {
+      width: 100%;
+      padding: 1rem;
+      cursor: pointer;
     }
 
     .quote-head,
@@ -28,11 +35,13 @@ export class QuoteCard extends LitElement {
   quote?: QuoteWithDetails
 
   private formatDate(value: string): string {
-    return new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(`${value}T12:00:00`))
+    return value
+      ? new Intl.DateTimeFormat(undefined, {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }).format(new Date(`${value}T12:00:00`))
+      : ""
   }
 
   private formatMoney(value: number): string {
@@ -43,20 +52,8 @@ export class QuoteCard extends LitElement {
     }).format(value)
   }
 
-  private lineLabel(line: QuoteLine): string {
-    if (line.type === "equipment") {
-      return line.equipmentId ?? "Equipment"
-    }
-
-    if (line.type === "labor") {
-      return line.laborId ?? "Labor"
-    }
-
-    return line.name ?? "Other"
-  }
-
   private quoteTotal(quote: QuoteWithDetails): number {
-    return quote.lines.reduce((total, line) => total + line.price, 0)
+    return getQuoteTotal(quote)
   }
 
   render() {
@@ -65,34 +62,15 @@ export class QuoteCard extends LitElement {
     }
 
     return html`
-      <mdui-card style="padding: 16px;">
+      <mdui-card>
         <div class="quote-head">
-          <div>
-            <div>Quote #${this.quote.id}</div>
-            <div><strong>${this.quote.customer.name}</strong></div>
-          </div>
-          <mdui-chip>${this.quote.lines.length} lines</mdui-chip>
+          <div><strong>${this.quote.customer.name}</strong></div>
+          <div>${this.formatDate(this.quote.date)}</div>
         </div>
 
         <div class="quote-summary">
-          <div>${this.formatDate(this.quote.date)}</div>
-          <div>${this.quote.surcharge}%</div>
-          <div>
-            <strong>${this.formatMoney(this.quoteTotal(this.quote))}</strong>
-          </div>
+          <strong>${this.formatMoney(this.quoteTotal(this.quote))}</strong>
         </div>
-
-        <mdui-list>
-          ${this.quote.lines.slice(0, 3).map(
-            (line) => html`
-              <mdui-list-item rounded>
-                <div slot="headline">${this.lineLabel(line)}</div>
-                <div slot="description">${line.type}</div>
-                <div slot="end-icon">${this.formatMoney(line.price)}</div>
-              </mdui-list-item>
-            `,
-          )}
-        </mdui-list>
       </mdui-card>
     `
   }

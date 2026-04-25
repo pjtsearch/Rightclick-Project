@@ -1,3 +1,4 @@
+import "urlpattern-polyfill"
 import "mdui/mdui.css"
 import "mdui"
 import { setColorScheme } from "mdui/functions/setColorScheme.js"
