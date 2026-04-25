@@ -30,6 +30,13 @@ export class QuoteCard extends LitElement {
     .quote-summary {
       margin-top: 0.75rem;
     }
+
+    .quote-status {
+      margin-top: 0.5rem;
+      color: rgb(196 92 0);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
   `
 
   quote?: QuoteWithDetails
@@ -71,6 +78,8 @@ export class QuoteCard extends LitElement {
         <div class="quote-summary">
           <strong>${this.formatMoney(this.quoteTotal(this.quote))}</strong>
         </div>
+
+        ${this.quote.syncStatus === "pending" ? html`<div class="quote-status">Pending Upload</div>` : ""}
       </mdui-card>
     `
   }

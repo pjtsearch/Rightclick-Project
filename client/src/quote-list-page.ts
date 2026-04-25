@@ -1,5 +1,5 @@
 import { LitElement, css, html } from "lit"
-import { fetchQuotes } from "./api.ts"
+import { fetchQuotes, quotesSyncedEvent } from "./api.ts"
 import { navigate } from "./navigation.ts"
 import type { QuoteWithDetails } from "./types.ts"
 import "./quote-card.ts"
@@ -36,7 +36,13 @@ export class QuoteListPage extends LitElement {
 
   connectedCallback(): void {
     super.connectedCallback()
+    window.addEventListener(quotesSyncedEvent, this.loadQuotes)
     void this.loadQuotes()
+  }
+
+  disconnectedCallback(): void {
+    window.removeEventListener(quotesSyncedEvent, this.loadQuotes)
+    super.disconnectedCallback()
   }
   private async loadQuotes(): Promise<void> {
     this.loading = true

@@ -48,8 +48,11 @@ export type QuoteLabor = {
   price: number
 }
 
+export type QuoteSyncStatus = "synced" | "pending"
+
 export type QuoteWithDetails = Omit<Quote, "customer"> & {
   customer: Customer
   equipments: QuoteEquipment[]
   labors: QuoteLabor[]
+  syncStatus?: QuoteSyncStatus
 }
