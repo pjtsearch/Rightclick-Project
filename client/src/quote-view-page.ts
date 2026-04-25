@@ -1,5 +1,5 @@
 import { LitElement, css, html } from "lit"
-import { fetchEquipment, fetchLaborRates, fetchQuote } from "./api.ts"
+import { deleteQuote, fetchEquipment, fetchLaborRates, fetchQuote } from "./api.ts"
 import { navigate } from "./navigation.ts"
 import { getLaborTotal, getQuoteEquipmentTotal, getQuoteTotal } from "./quote-totals.ts"
 import type { Equipment, LaborRate, QuoteWithDetails } from "./types.ts"
@@ -9,6 +9,8 @@ export class QuoteViewPage extends LitElement {
     quote: { attribute: false },
     loading: { state: true },
     quoteId: { attribute: false },
+    confirmDeleteOpen: { state: true },
+    deleting: { state: true },
   }
 
   static styles = css`
@@ -42,6 +44,8 @@ export class QuoteViewPage extends LitElement {
   private equipment: Equipment[] = []
   private laborRates: LaborRate[] = []
   private loading = true
+  private confirmDeleteOpen = false
+  private deleting = false
 
   connectedCallback(): void {
     super.connectedCallback()
@@ -102,6 +106,22 @@ export class QuoteViewPage extends LitElement {
     navigate("/")
   }
 
+  private async handleDelete(): Promise<void> {
+    if (!this.quote) {
+      return
+    }
+
+    this.deleting = true
+
+    try {
+      await deleteQuote(this.quote.id)
+      this.confirmDeleteOpen = false
+      navigate("/")
+    } finally {
+      this.deleting = false
+    }
+  }
+
   render() {
     if (this.loading) {
       return html`
@@ -124,6 +144,13 @@ export class QuoteViewPage extends LitElement {
       <mdui-top-app-bar>
         <mdui-top-app-bar-title>Quote Summary</mdui-top-app-bar-title>
         <div style="flex-grow: 1;"></div>
+        <mdui-button
+          variant="outlined"
+          @click=${() => {
+            this.confirmDeleteOpen = true
+          }}
+          >Delete</mdui-button
+        >
         <mdui-button @click=${() => this.handleDone()}>Done</mdui-button>
       </mdui-top-app-bar>
 
@@ -191,6 +218,32 @@ export class QuoteViewPage extends LitElement {
           <span>${this.formatMoney(this.quoteTotal())}</span>
         </div>
       </main>
+
+      <mdui-dialog
+        .open=${this.confirmDeleteOpen}
+        @close=${() => {
+          if (!this.deleting) {
+            this.confirmDeleteOpen = false
+          }
+        }}
+      >
+        <div style="padding: 24px 24px 8px;">
+          <div style="font-size: 1.1rem; font-weight: 700;">Delete Quote?</div>
+          <div style="margin-top: 8px; color: rgb(0 0 0 / 0.72);">This will permanently remove this quote.</div>
+        </div>
+        <div slot="action" style="display: flex; gap: 0.75rem; justify-content: flex-end; padding: 0 24px 24px;">
+          <mdui-button
+            ?disabled=${this.deleting}
+            @click=${() => {
+              this.confirmDeleteOpen = false
+            }}
+            >Cancel</mdui-button
+          >
+          <mdui-button variant="filled" ?loading=${this.deleting} @click=${() => void this.handleDelete()}
+            >Delete</mdui-button
+          >
+        </div>
+      </mdui-dialog>
     `
   }
 }

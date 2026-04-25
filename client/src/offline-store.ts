@@ -137,6 +137,14 @@ export async function putStoredQuotes(quotes: QuoteWithDetails[]): Promise<void>
   await setCachedResource("quotes", quotes)
 }
 
+export async function removeStoredQuote(id: string): Promise<void> {
+  const quotes = await getStoredQuotes()
+  await setCachedResource(
+    "quotes",
+    quotes.filter((quote) => quote.id !== id),
+  )
+}
+
 export async function queuePendingQuote(quote: QuoteWithDetails): Promise<void> {
   await putStoredQuote(quote)
 

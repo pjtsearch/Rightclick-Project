@@ -6,6 +6,7 @@ import {
   putStoredQuote,
   putStoredQuotes,
   queuePendingQuote,
+  removeStoredQuote,
   removePendingQuote,
   setCachedResource,
 } from "./offline-store.ts"
@@ -46,6 +47,16 @@ async function postQuote(quote: QuoteWithDetails): Promise<QuoteWithDetails> {
     },
     body: JSON.stringify(quote),
   })
+}
+
+async function deleteQuoteRequest(id: string): Promise<void> {
+  const response = await fetch(`/api/quotes/${id}`, {
+    method: "DELETE",
+  })
+
+  if (!response.ok) {
+    throw new Error(`Request failed for /api/quotes/${id} (${response.status})`)
+  }
 }
 
 async function readCachedCollection<T>(key: "customers" | "equipment" | "laborRates"): Promise<T | null> {
@@ -148,6 +159,22 @@ export async function createQuote(quote: QuoteWithDetails): Promise<QuoteWithDet
     await queuePendingQuote(pendingQuote)
     return pendingQuote
   }
+}
+
+export async function deleteQuote(id: string): Promise<void> {
+  const storedQuote = await getStoredQuote(id)
+
+  if (storedQuote?.syncStatus === "pending") {
+    await removePendingQuote(id)
+    await removeStoredQuote(id)
+    emitQuotesSynced()
+    return
+  }
+
+  await deleteQuoteRequest(id)
+  await removeStoredQuote(id)
+  await removePendingQuote(id)
+  emitQuotesSynced()
 }
 
 export async function syncPendingQuotes(): Promise<void> {
