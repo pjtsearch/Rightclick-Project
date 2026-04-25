@@ -140,6 +140,22 @@ export function fetchLaborRates(): Promise<LaborRate[]> {
   return fetchCachedCollection<LaborRate[]>("/api/laborRates", "laborRates")
 }
 
+export async function fetchRealtimeClientSecret(): Promise<string> {
+  const payload = await readJson<{ value?: string; client_secret?: { value?: string } }>(
+    "/api/realtime/client-secret",
+    {
+      method: "POST",
+    },
+  )
+  const clientSecret = payload.client_secret?.value ?? payload.value
+
+  if (!clientSecret) {
+    throw new Error("Realtime client secret response did not include a client secret.")
+  }
+
+  return clientSecret
+}
+
 export async function createQuote(quote: QuoteWithDetails): Promise<QuoteWithDetails> {
   try {
     if (!navigator.onLine) {

@@ -1,4 +1,5 @@
 import express, { type Response } from "express"
+import dotenv from "dotenv"
 import { asc, eq } from "drizzle-orm"
 import { randomUUID } from "node:crypto"
 import { existsSync } from "node:fs"
@@ -8,6 +9,8 @@ import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3"
 import { createDatabaseClient } from "./db/client.ts"
 import { customers, equipment, laborRates, quoteEquipment, quoteLabor, quotes } from "./db/schema.ts"
 import type { Customer, Equipment, LaborRate, QuoteWithDetails } from "./databaseTypes.ts"
+
+dotenv.config({ path: [".env.local", ".env"] })
 
 type AppDatabase = BetterSQLite3Database<typeof import("./db/schema.ts")>
 
@@ -20,17 +23,6 @@ function getDbPathFromArg(): string {
   }
 
   return resolve(process.cwd(), outputPath)
-}
-
-const emptyCustomer: Omit<Customer, "id"> = {
-  name: "",
-  address: "",
-  phone: null,
-  propertyType: null,
-  squareFootage: null,
-  systemType: null,
-  systemAge: null,
-  lastServiceDate: null,
 }
 
 export function createDatabaseHelpers(db: AppDatabase) {
@@ -355,6 +347,51 @@ export function createApp(databasePath: string) {
       response.status(201).json(quote)
     } catch (error) {
       sendConflict(response, error)
+    }
+  })
+
+  api.post("/realtime/client-secret", async (_request, response) => {
+    const apiKey = process.env.OPENAI_API_KEY
+
+    if (!apiKey) {
+      response.status(500).json({
+        error: "OPENAI_API_KEY must be set.",
+      })
+      return
+    }
+
+    try {
+      const openaiResponse = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          session: {
+            type: "realtime",
+            model: "gpt-realtime",
+            audio: {
+              output: {
+                voice: "marin",
+              },
+            },
+          },
+        }),
+      })
+
+      const payload = (await openaiResponse.json()) as unknown
+
+      if (!openaiResponse.ok) {
+        response.status(openaiResponse.status).json(payload)
+        return
+      }
+
+      response.json(payload)
+    } catch (error) {
+      response.status(500).json({
+        error: error instanceof Error ? error.message : "Unable to create realtime client secret.",
+      })
     }
   })
 
