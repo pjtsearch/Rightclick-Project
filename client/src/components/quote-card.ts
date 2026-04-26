@@ -1,7 +1,7 @@
 import { LitElement, css, html } from "lit"
-import { formatQuoteTimestamp } from "./quote-date.ts"
-import type { QuoteWithDetails } from "./types.ts"
-import { getQuoteTotal } from "./quote-totals.ts"
+import { formatQuoteTimestamp } from "../utils/quote/quote-date.ts"
+import type { QuoteWithDetails } from "../types/databaseTypes.ts"
+import { getQuoteTotal } from "../utils/quote/quote-totals.ts"
 
 export class QuoteCard extends LitElement {
   static properties = {

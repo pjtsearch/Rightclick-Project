@@ -1,9 +1,9 @@
 import { LitElement, css, html } from "lit"
-import { fetchQuotes, markQuoteAccomplished, quotesSyncedEvent } from "./api.ts"
-import { navigate } from "./navigation.ts"
-import { compareQuoteTimestampsDescending } from "./quote-date.ts"
-import type { QuoteWithDetails } from "./types.ts"
-import "./quote-card.ts"
+import { fetchQuotes, markQuoteAccomplished, quotesSyncedEvent } from "../services/api.ts"
+import { navigate } from "../services/navigation.ts"
+import { compareQuoteTimestampsDescending } from "../utils/quote/quote-date.ts"
+import type { QuoteWithDetails } from "../types/databaseTypes.ts"
+import "../components/quote-card.ts"
 
 export class QuoteListPage extends LitElement {
   static properties = {

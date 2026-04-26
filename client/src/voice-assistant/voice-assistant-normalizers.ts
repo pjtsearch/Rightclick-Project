@@ -1,5 +1,5 @@
-import { generateNewCustomer } from "./quote-draft.ts"
-import type { Customer, QuoteEquipment, QuoteLabor, QuoteWithDetails } from "./types.ts"
+import { generateNewCustomer } from "../utils/quote/quote-draft.ts"
+import type { Customer, QuoteEquipment, QuoteLabor, QuoteWithDetails } from "../types/databaseTypes.ts"
 import type { QuoteVoiceUpdatePayload, VoiceAssistantAction, VoiceAssistantContext } from "./voice-assistant.ts"
 import { normalizeNullableNumber, normalizeNullableString, normalizeString } from "./voice-assistant.ts"
 

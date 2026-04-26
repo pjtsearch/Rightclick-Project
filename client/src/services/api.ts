@@ -10,8 +10,8 @@ import {
   removePendingQuote,
   setCachedResource,
 } from "./offline-store.ts"
-import { getLocalDateString } from "./quote-date.ts"
-import type { Customer, Equipment, LaborRate, QuoteWithDetails } from "./types.ts"
+import { getLocalDateString } from "../utils/quote/quote-date.ts"
+import type { Customer, Equipment, LaborRate, QuoteWithDetails } from "../types/databaseTypes.ts"
 
 export const quotesSyncedEvent = "quotes-synced"
 
@@ -81,10 +81,7 @@ async function readCachedCollection<T>(key: "customers" | "equipment" | "laborRa
   return (await getCachedResource(key)) as T | null
 }
 
-async function fetchCachedCollection<T>(
-  path: string,
-  key: "customers" | "equipment" | "laborRates",
-): Promise<T> {
+async function fetchCachedCollection<T>(path: string, key: "customers" | "equipment" | "laborRates"): Promise<T> {
   try {
     const value = await readJson<T>(path)
     await setCachedResource(key, value as Customer[] & Equipment[] & LaborRate[])

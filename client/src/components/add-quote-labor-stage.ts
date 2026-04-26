@@ -1,8 +1,8 @@
 import Fuse from "fuse.js"
 import { LitElement, css, html } from "lit"
-import { fetchEquipment, fetchLaborRates } from "./api.ts"
-import type { Equipment, LaborRate, QuoteLabor, QuoteWithDetails } from "./types.ts"
-import { emptyQuote } from "./quote-draft.ts"
+import { fetchEquipment, fetchLaborRates } from "../services/api.ts"
+import type { Equipment, LaborRate, QuoteLabor, QuoteWithDetails } from "../types/databaseTypes.ts"
+import { emptyQuote } from "../utils/quote/quote-draft.ts"
 
 export class AddQuoteLaborStage extends LitElement {
   static properties = {

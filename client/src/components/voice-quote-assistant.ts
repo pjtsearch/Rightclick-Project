@@ -1,12 +1,25 @@
 import { LitElement, css, html, type PropertyValues } from "lit"
-import { fetchCustomers, fetchEquipment, fetchLaborRates, fetchRealtimeClientSecret } from "./api.ts"
-import { emptyQuote, generateNewCustomer } from "./quote-draft.ts"
-import { RealtimeVoiceSession } from "./realtime-voice-session.ts"
-import type { Customer, Equipment, LaborRate, QuoteWithDetails } from "./types.ts"
-import type { QuoteVoiceUpdatePayload, RealtimeEvent, VoiceAssistantAction, VoiceAssistantContext } from "./voice-assistant.ts"
-import { buildUpdateQuoteTool, buildVoiceAssistantInstructions, updateQuoteToolName } from "./voice-assistant-prompt.ts"
-import { normalizeAssistantAction, normalizeNewCustomer, normalizeQuote } from "./voice-assistant-normalizers.ts"
-import type { QuoteStage } from "./voice-assistant.ts"
+import { fetchCustomers, fetchEquipment, fetchLaborRates, fetchRealtimeClientSecret } from "../services/api.ts"
+import { emptyQuote, generateNewCustomer } from "../utils/quote/quote-draft.ts"
+import { RealtimeVoiceSession } from "../services/realtime-voice-session.ts"
+import type { Customer, Equipment, LaborRate, QuoteWithDetails } from "../types/databaseTypes.ts"
+import type {
+  QuoteVoiceUpdatePayload,
+  RealtimeEvent,
+  VoiceAssistantAction,
+  VoiceAssistantContext,
+} from "../voice-assistant/voice-assistant.ts"
+import {
+  buildUpdateQuoteTool,
+  buildVoiceAssistantInstructions,
+  updateQuoteToolName,
+} from "../voice-assistant/voice-assistant-prompt.ts"
+import {
+  normalizeAssistantAction,
+  normalizeNewCustomer,
+  normalizeQuote,
+} from "../voice-assistant/voice-assistant-normalizers.ts"
+import type { QuoteStage } from "../voice-assistant/voice-assistant.ts"
 
 export class VoiceQuoteAssistant extends LitElement {
   static properties = {

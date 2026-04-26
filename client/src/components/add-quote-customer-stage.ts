@@ -1,10 +1,10 @@
 import Fuse from "fuse.js"
 import { LitElement, css, html } from "lit"
 import "./add-quote-new-customer-dialog.ts"
-import { fetchCustomers } from "./api.ts"
-import { navigate } from "./navigation.ts"
-import type { Customer } from "./types.ts"
-import { emptyCustomer } from "./quote-draft.ts"
+import { fetchCustomers } from "../services/api.ts"
+import { navigate } from "../services/navigation.ts"
+import type { Customer } from "../types/databaseTypes.ts"
+import { emptyCustomer } from "../utils/quote/quote-draft.ts"
 
 export class AddQuoteCustomerStage extends LitElement {
   static properties = {

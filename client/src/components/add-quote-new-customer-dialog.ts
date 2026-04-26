@@ -1,6 +1,6 @@
 import { LitElement, css, html } from "lit"
-import { generateNewCustomer } from "./quote-draft.ts"
-import type { Customer } from "./types.ts"
+import { generateNewCustomer } from "../utils/quote/quote-draft.ts"
+import type { Customer } from "../types/databaseTypes.ts"
 
 export class AddQuoteNewCustomerDialog extends LitElement {
   static properties = {

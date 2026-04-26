@@ -1,4 +1,4 @@
-import type { RealtimeEvent } from "./voice-assistant.ts"
+import type { RealtimeEvent } from "../voice-assistant/voice-assistant.ts"
 
 type RealtimeSessionUpdate = {
   instructions: string

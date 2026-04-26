@@ -1,8 +1,8 @@
 import { LitElement, css, html } from "lit"
-import { fetchEquipment, fetchLaborRates } from "./api.ts"
-import { getLaborTotal, getQuoteEquipmentTotal, getQuoteTotal } from "./quote-totals.ts"
-import type { Equipment, LaborRate, QuoteWithDetails } from "./types.ts"
-import { emptyQuote } from "./quote-draft.ts"
+import { fetchEquipment, fetchLaborRates } from "../services/api.ts"
+import { getLaborTotal, getQuoteEquipmentTotal, getQuoteTotal } from "../utils/quote/quote-totals.ts"
+import type { Equipment, LaborRate, QuoteWithDetails } from "../types/databaseTypes.ts"
+import { emptyQuote } from "../utils/quote/quote-draft.ts"
 
 export class AddQuoteFinalizeStage extends LitElement {
   static properties = {

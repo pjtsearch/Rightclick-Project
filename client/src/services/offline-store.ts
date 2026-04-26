@@ -1,4 +1,4 @@
-import type { Customer, Equipment, LaborRate, QuoteWithDetails } from "./types.ts"
+import type { Customer, Equipment, LaborRate, QuoteWithDetails } from "../types/databaseTypes.ts"
 
 type CachedResourceMap = {
   customers: Customer[]
@@ -75,20 +75,18 @@ function readRequest<T>(request: IDBRequest<T>): Promise<T> {
 async function completeTransaction(transaction: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     transaction.addEventListener("complete", () => resolve())
-    transaction.addEventListener("abort", () => reject(transaction.error ?? new Error("IndexedDB transaction aborted.")))
+    transaction.addEventListener("abort", () =>
+      reject(transaction.error ?? new Error("IndexedDB transaction aborted.")),
+    )
     transaction.addEventListener("error", () => reject(transaction.error ?? new Error("IndexedDB transaction failed.")))
   })
 }
 
-export async function getCachedResource<K extends CachedResourceKey>(
-  key: K,
-): Promise<CachedResourceMap[K] | null> {
+export async function getCachedResource<K extends CachedResourceKey>(key: K): Promise<CachedResourceMap[K] | null> {
   const database = await openDatabase()
   const transaction = database.transaction(CACHE_STORE, "readonly")
   const store = transaction.objectStore(CACHE_STORE)
-  const record = (await readRequest(
-    store.get(key),
-  )) as CachedResourceRecord<K> | undefined
+  const record = (await readRequest(store.get(key))) as CachedResourceRecord<K> | undefined
 
   return record?.value ?? null
 }

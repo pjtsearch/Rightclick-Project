@@ -1,9 +1,9 @@
 import { LitElement, css, html } from "lit"
-import { deleteQuote, fetchEquipment, fetchLaborRates, fetchQuote } from "./api.ts"
-import { navigate } from "./navigation.ts"
-import { formatQuoteTimestamp } from "./quote-date.ts"
-import { getLaborTotal, getQuoteEquipmentTotal, getQuoteTotal } from "./quote-totals.ts"
-import type { Equipment, LaborRate, QuoteWithDetails } from "./types.ts"
+import { deleteQuote, fetchEquipment, fetchLaborRates, fetchQuote } from "../services/api.ts"
+import { navigate } from "../services/navigation.ts"
+import { formatQuoteTimestamp } from "../utils/quote/quote-date.ts"
+import { getLaborTotal, getQuoteEquipmentTotal, getQuoteTotal } from "../utils/quote/quote-totals.ts"
+import type { Equipment, LaborRate, QuoteWithDetails } from "../types/databaseTypes.ts"
 
 export class QuoteViewPage extends LitElement {
   static properties = {

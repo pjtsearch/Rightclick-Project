@@ -1,8 +1,8 @@
 import { Router } from "@lit-labs/router"
 import { LitElement, html } from "lit"
-import "./quote-list-page.ts"
-import "./add-quote-page.ts"
-import "./quote-view-page.ts"
+import "./pages/quote-list-page.ts"
+import "./pages/add-quote-page.ts"
+import "./pages/quote-view-page.ts"
 
 export class QuoteApp extends LitElement {
   private readonly router = new Router(this, [

@@ -1,4 +1,4 @@
-import type { Customer, Equipment, LaborRate, QuoteEquipment, QuoteLabor, QuoteWithDetails } from "./types"
+import type { Customer, Equipment, LaborRate, QuoteWithDetails } from "../types/databaseTypes.ts"
 
 export type QuoteStage = "customer" | "equipment" | "labor" | "finalize"
 

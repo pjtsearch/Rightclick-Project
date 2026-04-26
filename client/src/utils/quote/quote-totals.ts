@@ -1,4 +1,4 @@
-import type { QuoteWithDetails } from "./types.ts"
+import type { QuoteWithDetails } from "../../types/databaseTypes.ts"
 
 export function getQuoteEquipmentTotal(quote: QuoteWithDetails): number {
   return quote.equipments.reduce((total, item) => total + item.price * item.quantity, 0)

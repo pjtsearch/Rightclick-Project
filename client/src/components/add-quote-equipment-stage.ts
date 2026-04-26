@@ -1,8 +1,8 @@
 import Fuse from "fuse.js"
 import { LitElement, css, html } from "lit"
-import { fetchEquipment } from "./api.ts"
-import type { Equipment, QuoteEquipment, QuoteWithDetails } from "./types.ts"
-import { emptyQuote } from "./quote-draft.ts"
+import { fetchEquipment } from "../services/api.ts"
+import type { Equipment, QuoteEquipment, QuoteWithDetails } from "../types/databaseTypes.ts"
+import { emptyQuote } from "../utils/quote/quote-draft.ts"
 
 export class AddQuoteEquipmentStage extends LitElement {
   static properties = {

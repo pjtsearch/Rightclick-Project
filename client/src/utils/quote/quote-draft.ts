@@ -1,4 +1,4 @@
-import type { Customer, QuoteWithDetails } from "./types.ts"
+import type { Customer, QuoteWithDetails } from "../../types/databaseTypes.ts"
 
 export const emptyCustomer: Customer = {
   id: "",
