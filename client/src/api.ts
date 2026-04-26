@@ -10,6 +10,7 @@ import {
   removePendingQuote,
   setCachedResource,
 } from "./offline-store.ts"
+import { getLocalDateString } from "./quote-date.ts"
 import type { Customer, Equipment, LaborRate, QuoteWithDetails } from "./types.ts"
 
 export const quotesSyncedEvent = "quotes-synced"
@@ -64,6 +65,16 @@ async function deleteQuoteRequest(id: string): Promise<void> {
   if (!response.ok) {
     throw new Error(`Request failed for /api/quotes/${id} (${response.status})`)
   }
+}
+
+async function markQuoteAccomplishedRequest(id: string, serviceDate: string): Promise<QuoteWithDetails> {
+  return readJson<QuoteWithDetails>(`/api/quotes/${id}/accomplish`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ serviceDate }),
+  })
 }
 
 async function readCachedCollection<T>(key: "customers" | "equipment" | "laborRates"): Promise<T | null> {
@@ -200,6 +211,66 @@ export async function deleteQuote(id: string): Promise<void> {
   await removeStoredQuote(id)
   await removePendingQuote(id)
   emitQuotesSynced()
+}
+
+export async function markQuoteAccomplished(id: string): Promise<QuoteWithDetails> {
+  const storedQuote = await getStoredQuote(id)
+
+  if (!storedQuote) {
+    throw new Error(`Quote ${id} was not found.`)
+  }
+
+  const serviceDate = getLocalDateString()
+
+  if (storedQuote.syncStatus === "pending") {
+    const updatedQuote = withSyncStatus(
+      {
+        ...storedQuote,
+        accomplished: true,
+        customer: {
+          ...storedQuote.customer,
+          lastServiceDate: serviceDate,
+        },
+      },
+      "pending",
+    )
+
+    await queuePendingQuote(updatedQuote)
+
+    const cachedCustomers = await getCachedResource("customers")
+
+    if (cachedCustomers) {
+      await setCachedResource(
+        "customers",
+        cachedCustomers.map((customer) =>
+          customer.id === updatedQuote.customer.id
+            ? {
+                ...customer,
+                lastServiceDate: serviceDate,
+              }
+            : customer,
+        ),
+      )
+    }
+
+    emitQuotesSynced()
+    return updatedQuote
+  }
+
+  const updatedQuote = withSyncStatus(await markQuoteAccomplishedRequest(id, serviceDate), "synced")
+  await putStoredQuote(updatedQuote)
+
+  const cachedCustomers = await getCachedResource("customers")
+
+  if (cachedCustomers) {
+    await setCachedResource(
+      "customers",
+      cachedCustomers.map((customer) => (customer.id === updatedQuote.customer.id ? updatedQuote.customer : customer)),
+    )
+  }
+
+  emitQuotesSynced()
+  return updatedQuote
 }
 
 export async function syncPendingQuotes(): Promise<void> {

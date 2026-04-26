@@ -156,6 +156,7 @@ export class QuoteViewPage extends LitElement {
           <div><strong>${this.quote.customer.name}</strong></div>
           <div>${this.quote.customer.address}</div>
           <div>${this.formatDate(this.quote.date)}</div>
+          <div>Accomplished: ${this.quote.accomplished ? "Yes" : "No"}</div>
           <div>Surcharge: ${this.quote.surcharge}%</div>
         </mdui-card>
 

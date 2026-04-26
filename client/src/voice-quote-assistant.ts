@@ -39,6 +39,7 @@ export class VoiceQuoteAssistant extends LitElement {
     id: "",
     surcharge: 0,
     date: "",
+    accomplished: false,
     customer: {
       id: "",
       name: "",

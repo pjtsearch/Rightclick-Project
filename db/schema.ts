@@ -35,6 +35,7 @@ export const quotes = sqliteTable("quotes", {
   customer: text("customer").notNull().references(() => customers.id),
   surcharge: real("surcharge").notNull(),
   date: text("date").notNull(),
+  accomplished: integer("accomplished", { mode: "boolean" }).notNull().default(false),
 })
 
 export const quoteEquipment = sqliteTable(

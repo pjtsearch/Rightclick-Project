@@ -1,5 +1,5 @@
 import { LitElement, css, html } from "lit"
-import { fetchQuotes, quotesSyncedEvent } from "./api.ts"
+import { fetchQuotes, markQuoteAccomplished, quotesSyncedEvent } from "./api.ts"
 import { navigate } from "./navigation.ts"
 import { compareQuoteTimestampsDescending } from "./quote-date.ts"
 import type { QuoteWithDetails } from "./types.ts"
@@ -10,6 +10,7 @@ export class QuoteListPage extends LitElement {
     quotes: { state: true },
     loading: { state: true },
     error: { state: true },
+    accomplishingQuoteIds: { state: true },
   }
 
   static styles = css`
@@ -34,6 +35,7 @@ export class QuoteListPage extends LitElement {
   private quotes: QuoteWithDetails[] = []
   private loading = true
   private error = ""
+  private accomplishingQuoteIds: string[] = []
 
   connectedCallback(): void {
     super.connectedCallback()
@@ -94,8 +96,27 @@ export class QuoteListPage extends LitElement {
       (quote) => html`
         <quote-card
           .quote=${quote}
+          .accomplishing=${this.accomplishingQuoteIds.includes(quote.id)}
           @click=${() => {
             navigate(`/quotes/${quote.id}`)
+          }}
+          @mark-accomplished=${async () => {
+            if (quote.accomplished || this.accomplishingQuoteIds.includes(quote.id)) {
+              return
+            }
+
+            this.accomplishingQuoteIds = [...this.accomplishingQuoteIds, quote.id]
+
+            try {
+              const updatedQuote = await markQuoteAccomplished(quote.id)
+              this.quotes = this.quotes.map((currentQuote) =>
+                currentQuote.id === updatedQuote.id ? updatedQuote : currentQuote,
+              )
+            } catch (error) {
+              this.error = error instanceof Error ? error.message : "Unable to mark quote accomplished."
+            } finally {
+              this.accomplishingQuoteIds = this.accomplishingQuoteIds.filter((id) => id !== quote.id)
+            }
           }}
         ></quote-card>
       `,

@@ -26,6 +26,7 @@ export function createEmptyQuote(): QuoteWithDetails {
     id,
     surcharge: 0,
     date: "",
+    accomplished: false,
     customer: { ...emptyCustomer },
     equipments: [],
     labors: [],

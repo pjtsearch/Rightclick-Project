@@ -110,6 +110,24 @@ export class AddQuoteCustomerStage extends LitElement {
     this.emit("continue")
   }
 
+  private formatServiceDate(value: string | null): string | null {
+    if (!value) {
+      return null
+    }
+
+    const timestamp = Date.parse(`${value}T00:00:00`)
+
+    if (Number.isNaN(timestamp)) {
+      return value
+    }
+
+    return new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(new Date(timestamp))
+  }
+
   render() {
     return html`
       <mdui-top-app-bar>
@@ -137,7 +155,11 @@ export class AddQuoteCustomerStage extends LitElement {
                     <mdui-list-item @click=${() => this.selectCustomer(customer)}>
                       ${customer.name}
                       <div slot="description">
-                        ${[customer.address, customer.systemType].filter(Boolean).join(" • ")}
+                        <div>${customer.address}</div>
+                        ${customer.systemType ? html`<div>${customer.systemType}</div>` : ""}
+                        ${customer.lastServiceDate
+                          ? html`<div>Last Service ${this.formatServiceDate(customer.lastServiceDate)}</div>`
+                          : ""}
                       </div>
                     </mdui-list-item>
                   `,

@@ -54,7 +54,8 @@ function main(): void {
         "id" TEXT PRIMARY KEY,
         "customer" TEXT NOT NULL REFERENCES "customers"("id"),
         "surcharge" REAL NOT NULL,
-        "date" TEXT NOT NULL
+        "date" TEXT NOT NULL,
+        "accomplished" INTEGER NOT NULL DEFAULT 0
       );
     `)
 

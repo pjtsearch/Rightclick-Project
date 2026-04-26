@@ -32,6 +32,7 @@ export type Quote = {
   customer: string;
   surcharge: number;
   date: string;
+  accomplished: boolean;
 };
 
 export type QuoteEquipment = {

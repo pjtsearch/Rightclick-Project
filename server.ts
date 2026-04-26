@@ -26,6 +26,10 @@ function getDbPathFromArg(): string {
 }
 
 export function createDatabaseHelpers(db: AppDatabase) {
+  function isValidServiceDate(value: string): boolean {
+    return /^\d{4}-\d{2}-\d{2}$/u.test(value)
+  }
+
   function getCustomerByIdFrom(database: AppDatabase, id: string): Customer | null {
     const row = database.select().from(customers).where(eq(customers.id, id)).get()
     return row ?? null
@@ -158,6 +162,7 @@ export function createDatabaseHelpers(db: AppDatabase) {
           customer: customer.id,
           surcharge: payload.surcharge,
           date: payload.date,
+          accomplished: payload.accomplished === true,
         })
         .returning()
         .get()
@@ -223,6 +228,33 @@ export function createDatabaseHelpers(db: AppDatabase) {
     })
   }
 
+  function markQuoteAccomplished(id: string, serviceDate: string): QuoteWithDetails | null {
+    if (!isValidServiceDate(serviceDate)) {
+      throw new Error(`Service date ${serviceDate} is invalid.`)
+    }
+
+    return db.transaction((tx) => {
+      const transactionDb = tx as AppDatabase
+      const existingQuote = getQuoteByIdFrom(transactionDb, id)
+
+      if (!existingQuote) {
+        return null
+      }
+
+      tx.update(quotes)
+        .set({ accomplished: true })
+        .where(eq(quotes.id, id))
+        .run()
+
+      tx.update(customers)
+        .set({ lastServiceDate: serviceDate })
+        .where(eq(customers.id, existingQuote.customer.id))
+        .run()
+
+      return getQuoteByIdFrom(transactionDb, id)
+    })
+  }
+
   return {
     getCustomerById,
     getAllCustomers,
@@ -234,6 +266,7 @@ export function createDatabaseHelpers(db: AppDatabase) {
     getQuoteById,
     getAllQuotes,
     createQuote,
+    markQuoteAccomplished,
     deleteQuoteById,
   }
 }
@@ -345,6 +378,24 @@ export function createApp(databasePath: string) {
     try {
       const quote = helpers.createQuote(request.body as QuoteWithDetails)
       response.status(201).json(quote)
+    } catch (error) {
+      sendConflict(response, error)
+    }
+  })
+
+  api.post("/quotes/:id/accomplish", (request, response) => {
+    const id = request.params.id
+    const serviceDate = typeof request.body?.serviceDate === "string" ? request.body.serviceDate : ""
+
+    try {
+      const quote = helpers.markQuoteAccomplished(id, serviceDate)
+
+      if (!quote) {
+        sendNotFound(response, `Quote ${id} was not found.`)
+        return
+      }
+
+      response.json(quote)
     } catch (error) {
       sendConflict(response, error)
     }

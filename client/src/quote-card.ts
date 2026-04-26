@@ -6,6 +6,7 @@ import { getQuoteTotal } from "./quote-totals.ts"
 export class QuoteCard extends LitElement {
   static properties = {
     quote: { attribute: false },
+    accomplishing: { type: Boolean },
   }
 
   static styles = css`
@@ -34,13 +35,21 @@ export class QuoteCard extends LitElement {
 
     .quote-status {
       margin-top: 0.5rem;
-      color: rgb(196 92 0);
       font-size: 0.9rem;
       font-weight: 600;
+    }
+
+    .quote-status.pending {
+      color: rgb(196 92 0);
+    }
+
+    .quote-status.done {
+      color: rgb(21 128 61);
     }
   `
 
   quote?: QuoteWithDetails
+  accomplishing = false
 
   private formatDate(value: string): string {
     return value ? formatQuoteTimestamp(value) : ""
@@ -58,6 +67,17 @@ export class QuoteCard extends LitElement {
     return getQuoteTotal(quote)
   }
 
+  private handleAccomplishClick(event: Event): void {
+    event.stopPropagation()
+
+    this.dispatchEvent(
+      new CustomEvent("mark-accomplished", {
+        bubbles: true,
+        composed: true,
+      }),
+    )
+  }
+
   render() {
     if (!this.quote) {
       return html``
@@ -67,14 +87,22 @@ export class QuoteCard extends LitElement {
       <mdui-card>
         <div class="quote-head">
           <div><strong>${this.quote.customer.name}</strong></div>
-          <div>${this.formatDate(this.quote.date)}</div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div>${this.formatDate(this.quote.date)}</div>
+            <mdui-button-icon
+              icon=${this.quote.accomplished ? "check_circle" : "radio_button_unchecked"}
+              ?disabled=${this.quote.accomplished || this.accomplishing}
+              @click=${this.handleAccomplishClick}
+            ></mdui-button-icon>
+          </div>
         </div>
 
         <div class="quote-summary">
           <strong>${this.formatMoney(this.quoteTotal(this.quote))}</strong>
         </div>
 
-        ${this.quote.syncStatus === "pending" ? html`<div class="quote-status">Pending Upload</div>` : ""}
+        ${this.quote.syncStatus === "pending" ? html`<div class="quote-status pending">Pending Upload</div>` : ""}
+        ${this.quote.accomplished ? html`<div class="quote-status done">Accomplished</div>` : ""}
       </mdui-card>
     `
   }
