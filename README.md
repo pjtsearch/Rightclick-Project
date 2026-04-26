@@ -30,6 +30,8 @@ Fork this repo, build your solution, and include a short write-up explaining you
 
 ## Demo
 
+[Watch the video](https://drive.google.com/file/d/1yVPG3QGRqUSK_EdLaMbX-3lkw_GgOv8w/view?usp=sharing)
+
 ## Writeup
 
 ### What I built
