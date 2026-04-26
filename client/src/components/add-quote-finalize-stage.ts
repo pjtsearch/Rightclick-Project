@@ -133,7 +133,7 @@ export class AddQuoteFinalizeStage extends LitElement {
 
                   return html`
                     <mdui-list-item rounded>
-                      <div slot="headline">${equipment?.name ?? item.equipmentId}</div>
+                      ${equipment?.name ?? item.equipmentId}
                       <div slot="description">
                         ${equipment?.category ?? "Equipment"} • Qty ${item.quantity} • ${this.formatMoney(item.price)}
                         each
@@ -142,11 +142,7 @@ export class AddQuoteFinalizeStage extends LitElement {
                     </mdui-list-item>
                   `
                 })
-              : html`
-                  <mdui-list-item rounded>
-                    <div slot="headline">No equipment selected</div>
-                  </mdui-list-item>
-                `}
+              : html` <mdui-list-item rounded> No equipment selected </mdui-list-item> `}
           </mdui-list>
         </mdui-card>
 
@@ -161,17 +157,13 @@ export class AddQuoteFinalizeStage extends LitElement {
 
                   return html`
                     <mdui-list-item rounded>
-                      <div slot="headline">${laborRate?.name ?? item.laborId}</div>
+                      ${laborRate?.name ?? item.laborId}
                       <div slot="description">${item.hours} hr • ${this.formatMoney(item.price)}/hr</div>
                       <div slot="end-icon">${this.formatMoney(item.price * item.hours)}</div>
                     </mdui-list-item>
                   `
                 })
-              : html`
-                  <mdui-list-item rounded>
-                    <div slot="headline">No labor selected</div>
-                  </mdui-list-item>
-                `}
+              : html` <mdui-list-item rounded> No labor selected </mdui-list-item> `}
           </mdui-list>
         </mdui-card>
 
