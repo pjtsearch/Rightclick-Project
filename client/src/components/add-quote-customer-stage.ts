@@ -146,6 +146,7 @@ export class AddQuoteCustomerStage extends LitElement {
                         ${customer.lastServiceDate
                           ? html`<div>Last Service ${this.formatServiceDate(customer.lastServiceDate)}</div>`
                           : ""}
+                        ${customer.phone}
                       </div>
                     </mdui-list-item>
                   `,
