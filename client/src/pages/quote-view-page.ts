@@ -38,6 +38,21 @@ export class QuoteViewPage extends LitElement {
       justify-content: space-between;
       font-weight: 700;
     }
+
+    @media print {
+      mdui-top-app-bar {
+        display: none;
+      }
+
+      main {
+        padding: 0;
+        max-width: none;
+      }
+
+      .total {
+        position: static;
+      }
+    }
   `
 
   quote: QuoteWithDetails | null = null
@@ -103,6 +118,10 @@ export class QuoteViewPage extends LitElement {
     navigate("/")
   }
 
+  private handlePrint(): void {
+    window.print()
+  }
+
   private async handleDelete(): Promise<void> {
     if (!this.quote) {
       return
@@ -141,6 +160,7 @@ export class QuoteViewPage extends LitElement {
       <mdui-top-app-bar>
         <mdui-top-app-bar-title>Quote Summary</mdui-top-app-bar-title>
         <div style="flex-grow: 1;"></div>
+        <mdui-button variant="outlined" @click=${() => this.handlePrint()}>Print</mdui-button>
         <mdui-button
           variant="outlined"
           @click=${() => {
@@ -153,10 +173,9 @@ export class QuoteViewPage extends LitElement {
 
       <main>
         <mdui-card class="section" style="padding: 16px;">
-          <div><strong>${this.quote.customer.name}</strong></div>
+          <div><strong>HVAC Quote for ${this.quote.customer.name}</strong></div>
           <div>${this.quote.customer.address}</div>
           <div>${this.formatDate(this.quote.date)}</div>
-          <div>Accomplished: ${this.quote.accomplished ? "Yes" : "No"}</div>
           <div>Surcharge: ${this.quote.surcharge}%</div>
         </mdui-card>
 
