@@ -5,7 +5,7 @@ import type { Customer } from "./types.ts"
 export class AddQuoteNewCustomerDialog extends LitElement {
   static properties = {
     open: { type: Boolean },
-    customerForm: { state: true },
+    customer: { attribute: false },
   }
 
   static styles = css`
@@ -15,7 +15,7 @@ export class AddQuoteNewCustomerDialog extends LitElement {
   `
 
   open = false
-  private customerForm: Customer = createEmptyCustomer()
+  customer: Customer = createEmptyCustomer()
   private readonly customerFormId = `new-customer-form-${globalThis.crypto.randomUUID()}`
 
   private emit(type: string, detail?: unknown): void {
@@ -23,16 +23,21 @@ export class AddQuoteNewCustomerDialog extends LitElement {
   }
 
   updated(changed: Map<string, unknown>): void {
-    if (changed.has("open") && this.open) {
-      this.customerForm = createEmptyCustomer()
-    }
+    // if (changed.has("open") && this.open) {
+    //   const seededCustomer = createEmptyCustomer()
+    //   this.customer = {
+    //     ...seededCustomer,
+    //     ...this.customer,
+    //     id: this.customer.id || seededCustomer.id,
+    //   }
+    // }
   }
 
   private updateForm(update: Partial<Customer>): void {
-    this.customerForm = {
-      ...this.customerForm,
+    this.emit("draft-changed", {
+      ...this.customer,
       ...update,
-    }
+    })
   }
 
   private handleSubmit(event: SubmitEvent): void {
@@ -43,7 +48,7 @@ export class AddQuoteNewCustomerDialog extends LitElement {
       return
     }
 
-    this.emit("confirm", { ...this.customerForm })
+    this.emit("confirm", { ...this.customer })
   }
 
   render() {
@@ -63,7 +68,7 @@ export class AddQuoteNewCustomerDialog extends LitElement {
               name="name"
               label="Name"
               required
-              .value=${this.customerForm.name}
+              .value=${this.customer.name}
               @input=${(event: Event) => {
                 this.updateForm({
                   name: (event.target as HTMLInputElement).value,
@@ -75,7 +80,7 @@ export class AddQuoteNewCustomerDialog extends LitElement {
               name="address"
               label="Address"
               required
-              .value=${this.customerForm.address}
+              .value=${this.customer.address}
               @input=${(event: Event) => {
                 this.updateForm({
                   address: (event.target as HTMLInputElement).value,
@@ -86,7 +91,7 @@ export class AddQuoteNewCustomerDialog extends LitElement {
               class="section"
               name="phone"
               label="Phone"
-              .value=${this.customerForm.phone ?? ""}
+              .value=${this.customer.phone ?? ""}
               @input=${(event: Event) => {
                 this.updateForm({
                   phone: (event.target as HTMLInputElement).value || null,
@@ -97,7 +102,7 @@ export class AddQuoteNewCustomerDialog extends LitElement {
               class="section"
               name="propertyType"
               label="Property Type"
-              .value=${this.customerForm.propertyType ?? ""}
+              .value=${this.customer.propertyType ?? ""}
               @input=${(event: Event) => {
                 this.updateForm({
                   propertyType: (event.target as HTMLInputElement).value || null,
@@ -110,7 +115,7 @@ export class AddQuoteNewCustomerDialog extends LitElement {
               type="number"
               step="any"
               label="Square Footage"
-              .value=${String(this.customerForm.squareFootage ?? "")}
+              .value=${String(this.customer.squareFootage ?? "")}
               @input=${(event: Event) => {
                 const value = (event.target as HTMLInputElement).value
                 this.updateForm({
@@ -122,7 +127,7 @@ export class AddQuoteNewCustomerDialog extends LitElement {
               class="section"
               name="systemType"
               label="System Type"
-              .value=${this.customerForm.systemType ?? ""}
+              .value=${this.customer.systemType ?? ""}
               @input=${(event: Event) => {
                 this.updateForm({
                   systemType: (event.target as HTMLInputElement).value || null,
@@ -135,7 +140,7 @@ export class AddQuoteNewCustomerDialog extends LitElement {
               type="number"
               step="any"
               label="System Age"
-              .value=${String(this.customerForm.systemAge ?? "")}
+              .value=${String(this.customer.systemAge ?? "")}
               @input=${(event: Event) => {
                 const value = (event.target as HTMLInputElement).value
                 this.updateForm({
@@ -148,7 +153,7 @@ export class AddQuoteNewCustomerDialog extends LitElement {
               name="lastServiceDate"
               type="date"
               label="Last Service Date"
-              .value=${this.customerForm.lastServiceDate ?? ""}
+              .value=${this.customer.lastServiceDate ?? ""}
               @input=${(event: Event) => {
                 this.updateForm({
                   lastServiceDate: (event.target as HTMLInputElement).value || null,

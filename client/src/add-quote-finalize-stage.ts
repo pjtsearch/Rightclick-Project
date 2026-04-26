@@ -1,6 +1,5 @@
 import { LitElement, css, html } from "lit"
-import { createQuote, fetchEquipment, fetchLaborRates } from "./api.ts"
-import { navigate } from "./navigation.ts"
+import { fetchEquipment, fetchLaborRates } from "./api.ts"
 import { getLaborTotal, getQuoteEquipmentTotal, getQuoteTotal } from "./quote-totals.ts"
 import type { Equipment, LaborRate, QuoteWithDetails } from "./types.ts"
 
@@ -10,7 +9,6 @@ export class AddQuoteFinalizeStage extends LitElement {
     equipment: { state: true },
     laborRates: { state: true },
     loading: { state: true },
-    saving: { state: true },
   }
 
   static styles = css`
@@ -54,7 +52,6 @@ export class AddQuoteFinalizeStage extends LitElement {
   private equipment: Equipment[] = []
   private laborRates: LaborRate[] = []
   private loading = true
-  private saving = false
 
   connectedCallback(): void {
     super.connectedCallback()
@@ -104,17 +101,6 @@ export class AddQuoteFinalizeStage extends LitElement {
     return getQuoteTotal(this.quote)
   }
 
-  private async saveQuote(): Promise<void> {
-    this.saving = true
-
-    try {
-      const savedQuote = await createQuote(this.quote)
-      navigate(`/quotes/${savedQuote.id}`)
-    } finally {
-      this.saving = false
-    }
-  }
-
   private formatMoney(value: number): string {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
@@ -143,9 +129,7 @@ export class AddQuoteFinalizeStage extends LitElement {
         <mdui-button-icon icon="arrow_back" @click=${() => this.emit("back")}></mdui-button-icon>
         <mdui-top-app-bar-title>Finalize Quote</mdui-top-app-bar-title>
         <div style="flex-grow: 1;"></div>
-        <mdui-button ?disabled=${this.saving} @click=${() => void this.saveQuote()}>
-          ${this.saving ? "Saving..." : "Save Quote"}
-        </mdui-button>
+        <mdui-button @click=${() => this.emit("save")}> Save Quote </mdui-button>
       </mdui-top-app-bar>
 
       <main>

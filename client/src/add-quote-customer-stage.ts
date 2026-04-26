@@ -8,10 +8,11 @@ import type { Customer } from "./types.ts"
 export class AddQuoteCustomerStage extends LitElement {
   static properties = {
     customer: { attribute: false },
+    newCustomer: { attribute: false },
+    newDialogIsOpen: { attribute: false },
     customers: { state: true },
     query: { state: true },
     loading: { state: true },
-    newDialogIsOpen: { state: true },
   }
 
   static styles = css`
@@ -44,10 +45,21 @@ export class AddQuoteCustomerStage extends LitElement {
     systemAge: null,
     lastServiceDate: null,
   }
+  newCustomer: Customer = {
+    id: "",
+    name: "",
+    address: "",
+    phone: null,
+    propertyType: null,
+    squareFootage: null,
+    systemType: null,
+    systemAge: null,
+    lastServiceDate: null,
+  }
   private customers: Customer[] = []
   private query = ""
   private loading = true
-  private newDialogIsOpen = false
+  newDialogIsOpen = false
 
   connectedCallback(): void {
     super.connectedCallback()
@@ -94,25 +106,11 @@ export class AddQuoteCustomerStage extends LitElement {
   }
 
   private selectCustomer(customer: Customer): void {
-    this.emit("change", customer)
+    this.emit("select-customer", customer)
     this.emit("continue")
   }
 
   render() {
-    if (this.loading) {
-      return html`
-        <mdui-top-app-bar>
-          <mdui-top-app-bar-title>Choose Customer</mdui-top-app-bar-title>
-        </mdui-top-app-bar>
-
-        <main>
-          <mdui-card style="padding: 24px; text-align: center;">
-            <mdui-circular-progress indeterminate></mdui-circular-progress>
-          </mdui-card>
-        </main>
-      `
-    }
-
     return html`
       <mdui-top-app-bar>
         <mdui-button-icon icon="arrow_back" @click=${() => navigate("/")}></mdui-button-icon>
@@ -148,17 +146,27 @@ export class AddQuoteCustomerStage extends LitElement {
             `}
       </main>
 
-      <mdui-fab class="fab" extended icon="person_add" @click=${() => (this.newDialogIsOpen = true)}>
+      <mdui-fab
+        class="fab"
+        extended
+        icon="person_add"
+        @click=${() => this.emit("new-customer-dialog-open-changed", true)}
+      >
         New Customer
       </mdui-fab>
 
       <add-quote-new-customer-dialog
         .open=${this.newDialogIsOpen}
+        .customer=${this.newCustomer}
+        @draft-changed=${(event: CustomEvent<Customer>) => {
+          this.emit("new-customer-edited", event.detail)
+        }}
         @close=${() => {
-          this.newDialogIsOpen = false
+          this.emit("new-customer-dialog-open-changed", false)
         }}
         @confirm=${(event: CustomEvent<Customer>) => {
-          this.newDialogIsOpen = false
+          this.emit("new-customer-dialog-open-changed", false)
+          this.emit("new-customer-edited", event.detail)
           this.selectCustomer(event.detail)
         }}
       ></add-quote-new-customer-dialog>
