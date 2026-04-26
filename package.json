@@ -9,7 +9,7 @@
   "scripts": {
     "initDatabase": "node --experimental-sqlite ./initDatabase.ts",
     "importJsons": "node ./importJsons.ts",
-    "server": "node ./server.ts",
+    "server": "node ./server/server.ts",
     "client:dev": "npm --prefix ./client run dev",
     "client:build": "npm --prefix ./client run build"
   },

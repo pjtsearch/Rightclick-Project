@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto"
 import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
-import { createDatabaseClient } from "./db/client.ts"
-import { customers, equipment, laborRates } from "./db/schema.ts"
+import { createDatabaseClient } from "./server/db/client.ts"
+import { customers, equipment, laborRates } from "./server/db/schema.ts"
 
 type CustomerJson = {
   id: string
