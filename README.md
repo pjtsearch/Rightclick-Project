@@ -93,23 +93,25 @@ I wanted the server to be as simple and straightforward as possible, so I starte
    npm run importJsons db.sql
    ```
 
-3. Start server
+3. For the voice assistant an OpenAI API key in the environment variable OPENAI_API_KEY is required
+
+4. Start server
 
    ```bash
    npm run server db.sql
    ```
 
-4. Install dependencies for client
+5. Install dependencies for client
 
    ```bash
    cd client
    npm install
    ```
 
-5. Build client
+6. Build client
 
    ```bash
    npm run client:build
    ```
 
-6. View webapp at http://localhost:3000
+7. View webapp at http://localhost:3000
