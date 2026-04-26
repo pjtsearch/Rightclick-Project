@@ -12,23 +12,28 @@ export const emptyCustomer: Customer = {
   lastServiceDate: null,
 }
 
-export function createEmptyCustomer(): Customer {
+export const emptyQuote: QuoteWithDetails = {
+  id: "",
+  surcharge: 0,
+  date: "",
+  accomplished: false,
+  customer: { ...emptyCustomer },
+  equipments: [],
+  labors: [],
+}
+
+export function generateNewCustomer(): Customer {
   return {
     ...emptyCustomer,
     id: globalThis.crypto.randomUUID(),
   }
 }
 
-export function createEmptyQuote(): QuoteWithDetails {
+export function generateNewQuote(): QuoteWithDetails {
   const id = globalThis.crypto.randomUUID()
 
   return {
+    ...emptyQuote,
     id,
-    surcharge: 0,
-    date: "",
-    accomplished: false,
-    customer: { ...emptyCustomer },
-    equipments: [],
-    labors: [],
   }
 }

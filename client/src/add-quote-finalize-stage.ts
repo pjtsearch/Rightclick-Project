@@ -2,6 +2,7 @@ import { LitElement, css, html } from "lit"
 import { fetchEquipment, fetchLaborRates } from "./api.ts"
 import { getLaborTotal, getQuoteEquipmentTotal, getQuoteTotal } from "./quote-totals.ts"
 import type { Equipment, LaborRate, QuoteWithDetails } from "./types.ts"
+import { emptyQuote } from "./quote-draft.ts"
 
 export class AddQuoteFinalizeStage extends LitElement {
   static properties = {
@@ -31,25 +32,7 @@ export class AddQuoteFinalizeStage extends LitElement {
     }
   `
 
-  quote: QuoteWithDetails = {
-    id: "",
-    surcharge: 0,
-    date: "",
-    accomplished: false,
-    customer: {
-      id: "",
-      name: "",
-      address: "",
-      phone: null,
-      propertyType: null,
-      squareFootage: null,
-      systemType: null,
-      systemAge: null,
-      lastServiceDate: null,
-    },
-    equipments: [],
-    labors: [],
-  }
+  quote: QuoteWithDetails = { ...emptyQuote }
   private equipment: Equipment[] = []
   private laborRates: LaborRate[] = []
   private loading = true

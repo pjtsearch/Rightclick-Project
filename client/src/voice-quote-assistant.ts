@@ -1,6 +1,6 @@
 import { LitElement, css, html, type PropertyValues } from "lit"
 import { fetchCustomers, fetchEquipment, fetchLaborRates, fetchRealtimeClientSecret } from "./api.ts"
-import { createEmptyCustomer } from "./quote-draft.ts"
+import { emptyQuote, generateNewCustomer } from "./quote-draft.ts"
 import { RealtimeVoiceSession } from "./realtime-voice-session.ts"
 import type { Customer, Equipment, LaborRate, QuoteWithDetails } from "./types.ts"
 import type { QuoteVoiceUpdatePayload, RealtimeEvent, VoiceAssistantAction, VoiceAssistantContext } from "./voice-assistant.ts"
@@ -35,27 +35,9 @@ export class VoiceQuoteAssistant extends LitElement {
     }
   `
 
-  quote: QuoteWithDetails = {
-    id: "",
-    surcharge: 0,
-    date: "",
-    accomplished: false,
-    customer: {
-      id: "",
-      name: "",
-      address: "",
-      phone: null,
-      propertyType: null,
-      squareFootage: null,
-      systemType: null,
-      systemAge: null,
-      lastServiceDate: null,
-    },
-    equipments: [],
-    labors: [],
-  }
+  quote: QuoteWithDetails = { ...emptyQuote }
   stage: QuoteStage = "customer"
-  newCustomer: Customer = createEmptyCustomer()
+  newCustomer: Customer = generateNewCustomer()
   newCustomerDialogIsOpen = false
   private customers: Customer[] = []
   private equipment: Equipment[] = []

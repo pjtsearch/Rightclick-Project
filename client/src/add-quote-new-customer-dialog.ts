@@ -1,5 +1,5 @@
 import { LitElement, css, html } from "lit"
-import { createEmptyCustomer } from "./quote-draft.ts"
+import { generateNewCustomer } from "./quote-draft.ts"
 import type { Customer } from "./types.ts"
 
 export class AddQuoteNewCustomerDialog extends LitElement {
@@ -15,7 +15,7 @@ export class AddQuoteNewCustomerDialog extends LitElement {
   `
 
   open = false
-  customer: Customer = createEmptyCustomer()
+  customer: Customer = generateNewCustomer()
   private readonly customerFormId = `new-customer-form-${globalThis.crypto.randomUUID()}`
 
   private emit(type: string, detail?: unknown): void {

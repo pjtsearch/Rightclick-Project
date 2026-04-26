@@ -2,6 +2,7 @@ import Fuse from "fuse.js"
 import { LitElement, css, html } from "lit"
 import { fetchEquipment, fetchLaborRates } from "./api.ts"
 import type { Equipment, LaborRate, QuoteLabor, QuoteWithDetails } from "./types.ts"
+import { emptyQuote } from "./quote-draft.ts"
 
 export class AddQuoteLaborStage extends LitElement {
   static properties = {
@@ -86,25 +87,7 @@ export class AddQuoteLaborStage extends LitElement {
     }
   `
 
-  quote: QuoteWithDetails = {
-    id: "",
-    surcharge: 0,
-    date: "",
-    accomplished: false,
-    customer: {
-      id: "",
-      name: "",
-      address: "",
-      phone: null,
-      propertyType: null,
-      squareFootage: null,
-      systemType: null,
-      systemAge: null,
-      lastServiceDate: null,
-    },
-    equipments: [],
-    labors: [],
-  }
+  quote: QuoteWithDetails = { ...emptyQuote }
   private equipment: Equipment[] = []
   private laborRates: LaborRate[] = []
   private loading = true

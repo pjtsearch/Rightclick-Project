@@ -4,6 +4,7 @@ import "./add-quote-new-customer-dialog.ts"
 import { fetchCustomers } from "./api.ts"
 import { navigate } from "./navigation.ts"
 import type { Customer } from "./types.ts"
+import { emptyCustomer } from "./quote-draft.ts"
 
 export class AddQuoteCustomerStage extends LitElement {
   static properties = {
@@ -34,28 +35,8 @@ export class AddQuoteCustomerStage extends LitElement {
     }
   `
 
-  customer: Customer = {
-    id: "",
-    name: "",
-    address: "",
-    phone: null,
-    propertyType: null,
-    squareFootage: null,
-    systemType: null,
-    systemAge: null,
-    lastServiceDate: null,
-  }
-  newCustomer: Customer = {
-    id: "",
-    name: "",
-    address: "",
-    phone: null,
-    propertyType: null,
-    squareFootage: null,
-    systemType: null,
-    systemAge: null,
-    lastServiceDate: null,
-  }
+  customer: Customer = { ...emptyCustomer }
+  newCustomer: Customer = { ...emptyCustomer }
   private customers: Customer[] = []
   private query = ""
   private loading = true

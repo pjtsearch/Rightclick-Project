@@ -1,4 +1,4 @@
-import { createEmptyCustomer } from "./quote-draft.ts"
+import { generateNewCustomer } from "./quote-draft.ts"
 import type { Customer, QuoteEquipment, QuoteLabor, QuoteWithDetails } from "./types.ts"
 import type { QuoteVoiceUpdatePayload, VoiceAssistantAction, VoiceAssistantContext } from "./voice-assistant.ts"
 import { normalizeNullableNumber, normalizeNullableString, normalizeString } from "./voice-assistant.ts"
@@ -46,7 +46,7 @@ export function normalizeNewCustomer(
   }
 
   const currentCustomer = context.newCustomer
-  const generatedCustomer = createEmptyCustomer()
+  const generatedCustomer = generateNewCustomer()
   const customerId = typeof customerPatch.id === "string" && customerPatch.id.trim() ? customerPatch.id.trim() : null
 
   return {
@@ -110,16 +110,14 @@ export function normalizeAssistantAction(
     }
 
     const customerPatch = payload.quote.customer
-    const customerId =
-      typeof customerPatch.id === "string" && customerPatch.id.trim() ? customerPatch.id.trim() : null
+    const customerId = typeof customerPatch.id === "string" && customerPatch.id.trim() ? customerPatch.id.trim() : null
     const customerName =
       typeof customerPatch.name === "string" && customerPatch.name.trim()
         ? customerPatch.name.trim().toLowerCase()
         : null
     const matchedCustomer =
       (customerId && context.customers.find((customer) => customer.id === customerId)) ||
-      (customerName &&
-        context.customers.find((customer) => customer.name.trim().toLowerCase() === customerName)) ||
+      (customerName && context.customers.find((customer) => customer.name.trim().toLowerCase() === customerName)) ||
       null
 
     if (matchedCustomer) {
@@ -139,9 +137,7 @@ export function normalizeAssistantAction(
 function normalizeCustomer(customerPatch: Partial<Customer>, context: VoiceAssistantContext): Customer {
   const customerId = typeof customerPatch.id === "string" && customerPatch.id.trim() ? customerPatch.id.trim() : null
   const customerName =
-    typeof customerPatch.name === "string" && customerPatch.name.trim()
-      ? customerPatch.name.trim().toLowerCase()
-      : null
+    typeof customerPatch.name === "string" && customerPatch.name.trim() ? customerPatch.name.trim().toLowerCase() : null
 
   if (customerId) {
     const matchedCustomer = context.customers.find((customer) => customer.id === customerId)
@@ -160,7 +156,7 @@ function normalizeCustomer(customerPatch: Partial<Customer>, context: VoiceAssis
   }
 
   const currentCustomer = context.quote.customer
-  const generatedCustomer = createEmptyCustomer()
+  const generatedCustomer = generateNewCustomer()
 
   return {
     ...currentCustomer,

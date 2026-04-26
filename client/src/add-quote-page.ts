@@ -7,7 +7,7 @@ import "./add-quote-labor-stage.ts"
 import "./add-quote-finalize-stage.ts"
 import "./voice-quote-assistant.ts"
 import { navigate } from "./navigation.ts"
-import { createEmptyCustomer, createEmptyQuote } from "./quote-draft.ts"
+import { generateNewCustomer, generateNewQuote } from "./quote-draft.ts"
 import { VoiceAssistantAction } from "./voice-assistant.ts"
 
 type QuoteStage = "customer" | "equipment" | "labor" | "finalize"
@@ -21,14 +21,14 @@ export class AddQuotePage extends LitElement {
     saving: { state: true },
   }
 
-  quote: QuoteWithDetails = createEmptyQuote()
+  quote: QuoteWithDetails = generateNewQuote()
   private stage: QuoteStage = "customer"
   private newCustomerDialogIsOpen = false
-  private newCustomer: Customer = createEmptyCustomer()
+  private newCustomer: Customer = generateNewCustomer()
   private saving: boolean = false
 
   private openNewCustomerDialog(): void {
-    this.newCustomer = createEmptyCustomer()
+    this.newCustomer = generateNewCustomer()
     this.newCustomerDialogIsOpen = true
     this.stage = "customer"
   }
@@ -73,11 +73,7 @@ export class AddQuotePage extends LitElement {
     if (action.stage) {
       this.stage = action.stage
 
-      if (
-        action.stage !== "customer" &&
-        action.openNewCustomerDialog !== true &&
-        action.confirmNewCustomer !== true
-      ) {
+      if (action.stage !== "customer" && action.openNewCustomerDialog !== true && action.confirmNewCustomer !== true) {
         this.newCustomerDialogIsOpen = false
       }
     }
