@@ -127,6 +127,11 @@ export class QuoteListPage extends LitElement {
     return html`
       <mdui-top-app-bar variant="large" scroll-behavior="shrink">
         <mdui-top-app-bar-title>HVAC Quotes</mdui-top-app-bar-title>
+        <mdui-button-icon
+          icon="refresh"
+          ?disabled=${this.loading}
+          @click=${() => void this.loadQuotes()}
+        ></mdui-button-icon>
       </mdui-top-app-bar>
 
       <main>${this.renderQuotesList()}</main>
