@@ -286,14 +286,7 @@ export class AddQuoteLaborStage extends LitElement {
                     </mdui-card>
                   `,
                 )}
-              </div>
-
-              <mdui-card style="padding: 16px;">
-                <div class="summary-row">
-                  <span>Subtotal</span>
-                  <strong>${this.formatMoney(this.quoteTotal())}</strong>
-                </div>
-              </mdui-card>`}
+              </div>`}
       </main>
     `
   }
