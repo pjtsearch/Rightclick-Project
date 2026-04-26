@@ -14,6 +14,14 @@ export class AddQuoteEquipmentStage extends LitElement {
   }
 
   static styles = css`
+    main {
+      display: grid;
+    }
+
+    mdui-circular-progress {
+      margin: auto;
+    }
+
     mdui-card {
       padding: 16px;
     }
@@ -205,102 +213,91 @@ export class AddQuoteEquipmentStage extends LitElement {
   }
 
   render() {
-    if (this.loading) {
-      return html`
-        <mdui-top-app-bar>
-          <mdui-top-app-bar-title>Quote Equipment</mdui-top-app-bar-title>
-        </mdui-top-app-bar>
-
-        <main>
-          <mdui-card style="padding: 24px; text-align: center;">
-            <mdui-circular-progress indeterminate></mdui-circular-progress>
-          </mdui-card>
-        </main>
-      `
-    }
-
     return html`
       <mdui-top-app-bar>
         <mdui-button-icon icon="arrow_back" @click=${() => this.emit("back")}></mdui-button-icon>
         <mdui-top-app-bar-title>Choose Equipment</mdui-top-app-bar-title>
-        <div style="flex-grow: 1;"></div>
         <mdui-button @click=${() => this.emit("continue")}>Continue</mdui-button>
       </mdui-top-app-bar>
 
       <main>
-        <div class="top-items">
-          <mdui-card>
-            <div><strong>${this.quote.customer.name}</strong></div>
-            <div>${this.quote.customer.address}</div>
-          </mdui-card>
+        ${this.loading
+          ? html`<mdui-circular-progress indeterminate></mdui-circular-progress> `
+          : html` <div class="top-items">
+                <mdui-card>
+                  <div><strong>${this.quote.customer.name}</strong></div>
+                  <div>${this.quote.customer.address}</div>
+                </mdui-card>
 
-          <mdui-card class="summary">
-            <div class="summary-row">
-              <span>Selected Units</span>
-              <strong>${this.selectedUnits()}</strong>
-            </div>
-            <div class="summary-row">
-              <span>Equipment Subtotal</span>
-              <strong>${this.formatMoney(this.equipmentSubtotal())}</strong>
-            </div>
-          </mdui-card>
-        </div>
-
-        <mdui-text-field
-          class="search"
-          icon="search"
-          label="Search equipment"
-          .value=${this.query}
-          @input=${(event: Event) => {
-            this.query = (event.target as HTMLInputElement).value
-          }}
-        ></mdui-text-field>
-
-        <div class="chip-row">
-          <mdui-chip clickable ?selected=${this.category === ""} @click=${() => (this.category = "")}>All</mdui-chip>
-          ${this.categories().map(
-            (category) => html`
-              <mdui-chip
-                clickable
-                ?selected=${this.category === category}
-                @click=${() => {
-                  this.category = category
-                }}
-                >${category}</mdui-chip
-              >
-            `,
-          )}
-        </div>
-
-        <div class="catalog-list">
-          ${this.filteredEquipment().map(
-            (item) => html`
-              <mdui-card class="item-card">
-                <div class="item-head">
-                  <div class="item-copy">
-                    <div><strong>${item.name}</strong></div>
-                    <div class="item-meta">${item.category} • ${item.brand} • ${item.modelNumber}</div>
+                <mdui-card class="summary">
+                  <div class="summary-row">
+                    <span>Selected Units</span>
+                    <strong>${this.selectedUnits()}</strong>
                   </div>
-                  <div class="unit-price">${this.formatMoney(item.baseCost)}</div>
-                </div>
+                  <div class="summary-row">
+                    <span>Equipment Subtotal</span>
+                    <strong>${this.formatMoney(this.equipmentSubtotal())}</strong>
+                  </div>
+                </mdui-card>
+              </div>
 
-                <div class=${"stepper" + (this.quantityFor(item.id) == 0 ? " empty" : "")}>
-                  <mdui-button-icon
-                    class="remove"
-                    icon="remove"
-                    @click=${() => this.changeQuantity(item, -1)}
-                  ></mdui-button-icon>
-                  <span>${String(this.quantityFor(item.id))}</span>
-                  <mdui-button-icon
-                    class="add"
-                    icon="add"
-                    @click=${() => this.changeQuantity(item, 1)}
-                  ></mdui-button-icon>
-                </div>
-              </mdui-card>
-            `,
-          )}
-        </div>
+              <mdui-text-field
+                class="search"
+                icon="search"
+                label="Search equipment"
+                .value=${this.query}
+                @input=${(event: Event) => {
+                  this.query = (event.target as HTMLInputElement).value
+                }}
+              ></mdui-text-field>
+
+              <div class="chip-row">
+                <mdui-chip clickable ?selected=${this.category === ""} @click=${() => (this.category = "")}
+                  >All</mdui-chip
+                >
+                ${this.categories().map(
+                  (category) => html`
+                    <mdui-chip
+                      clickable
+                      ?selected=${this.category === category}
+                      @click=${() => {
+                        this.category = category
+                      }}
+                      >${category}</mdui-chip
+                    >
+                  `,
+                )}
+              </div>
+
+              <div class="catalog-list">
+                ${this.filteredEquipment().map(
+                  (item) => html`
+                    <mdui-card class="item-card">
+                      <div class="item-head">
+                        <div class="item-copy">
+                          <div><strong>${item.name}</strong></div>
+                          <div class="item-meta">${item.category} • ${item.brand} • ${item.modelNumber}</div>
+                        </div>
+                        <div class="unit-price">${this.formatMoney(item.baseCost)}</div>
+                      </div>
+
+                      <div class=${"stepper" + (this.quantityFor(item.id) == 0 ? " empty" : "")}>
+                        <mdui-button-icon
+                          class="remove"
+                          icon="remove"
+                          @click=${() => this.changeQuantity(item, -1)}
+                        ></mdui-button-icon>
+                        <span>${String(this.quantityFor(item.id))}</span>
+                        <mdui-button-icon
+                          class="add"
+                          icon="add"
+                          @click=${() => this.changeQuantity(item, 1)}
+                        ></mdui-button-icon>
+                      </div>
+                    </mdui-card>
+                  `,
+                )}
+              </div>`}
       </main>
     `
   }

@@ -18,6 +18,14 @@ export class AddQuoteLaborStage extends LitElement {
       padding: 16px;
     }
 
+    main {
+      display: grid;
+    }
+
+    mdui-circular-progress {
+      margin: auto;
+    }
+
     .search {
       position: sticky;
       top: 64px;
@@ -196,108 +204,96 @@ export class AddQuoteLaborStage extends LitElement {
   }
 
   render() {
-    if (this.loading) {
-      return html`
-        <mdui-top-app-bar>
-          <mdui-top-app-bar-title>Choose Labor</mdui-top-app-bar-title>
-        </mdui-top-app-bar>
-
-        <main>
-          <mdui-card style="padding: 24px; text-align: center;">
-            <mdui-circular-progress indeterminate></mdui-circular-progress>
-          </mdui-card>
-        </main>
-      `
-    }
-
     return html`
       <mdui-top-app-bar>
         <mdui-button-icon icon="arrow_back" @click=${() => this.emit("back")}></mdui-button-icon>
         <mdui-top-app-bar-title>Quote Labor</mdui-top-app-bar-title>
-        <div style="flex-grow: 1;"></div>
         <mdui-button @click=${() => this.emit("continue")}>Continue</mdui-button>
       </mdui-top-app-bar>
 
       <main>
-        <div class="top-items">
-          <mdui-card class="section" style="padding: 16px;">
-            <div><strong>${this.quote.customer.name}</strong></div>
-            <div>${this.quote.customer.address}</div>
-          </mdui-card>
+        ${this.loading
+          ? html`<mdui-circular-progress indeterminate></mdui-circular-progress> `
+          : html`<div class="top-items">
+                <mdui-card class="section" style="padding: 16px;">
+                  <div><strong>${this.quote.customer.name}</strong></div>
+                  <div>${this.quote.customer.address}</div>
+                </mdui-card>
 
-          <mdui-card class="section" style="padding: 16px;">
-            <div class="summary-row">
-              <span>Equipment Subtotal</span>
-              <strong>${this.formatMoney(this.equipmentSubtotal())}</strong>
-            </div>
-            <div class="summary-row" style="margin-top: 12px;">
-              <span>Labor Subtotal</span>
-              <strong>${this.formatMoney(this.laborSubtotal())}</strong>
-            </div>
-          </mdui-card>
-        </div>
-
-        <mdui-text-field
-          class="search"
-          icon="search"
-          label="Search labor"
-          .value=${this.query}
-          @input=${(event: Event) => {
-            this.query = (event.target as HTMLInputElement).value
-          }}
-        ></mdui-text-field>
-
-        <div class="catalog-list">
-          ${this.filteredLaborRates().map(
-            (item) => html`
-              <mdui-card class="item-card">
-                <div class="item-start">
-                  <div class="item-left">
-                    <div><strong>${item.name}</strong></div>
-                    <div class="item-meta">
-                      ${item.estimatedHoursMin}–${item.estimatedHoursMax} hr • ${this.formatMoney(item.hourlyRate)}/hr
-                    </div>
+                <mdui-card class="section" style="padding: 16px;">
+                  <div class="summary-row">
+                    <span>Equipment Subtotal</span>
+                    <strong>${this.formatMoney(this.equipmentSubtotal())}</strong>
                   </div>
-                  ${this.hoursFor(item.jobId) != 0
-                    ? html`<div class="item-total">
-                        ${this.formatMoney(item.hourlyRate * this.hoursFor(item.jobId))}
-                      </div>`
-                    : ""}
-                </div>
+                  <div class="summary-row" style="margin-top: 12px;">
+                    <span>Labor Subtotal</span>
+                    <strong>${this.formatMoney(this.laborSubtotal())}</strong>
+                  </div>
+                </mdui-card>
+              </div>
 
-                <div class=${"stepper" + (this.hoursFor(item.jobId) == 0 ? " empty" : "")}>
-                  <mdui-button-icon
-                    class="remove"
-                    icon="remove"
-                    @click=${() => this.changeHours(item, -0.5)}
-                  ></mdui-button-icon>
-                  <mdui-text-field
-                    type="number"
-                    step="0.5"
-                    min="0"
-                    label="Hours"
-                    .value=${String(this.hoursFor(item.jobId))}
-                    @input=${(event: Event) => {
-                      this.setHours(item, Number((event.target as HTMLInputElement).value || 0))
-                    }}
-                  ></mdui-text-field>
-                  <mdui-button-icon
-                    class="add"
-                    icon="add"
-                    @click=${() => this.changeHours(item, 0.5)}
-                  ></mdui-button-icon>
-                </div>
-              </mdui-card>
-            `,
-          )}
-        </div>
+              <mdui-text-field
+                class="search"
+                icon="search"
+                label="Search labor"
+                .value=${this.query}
+                @input=${(event: Event) => {
+                  this.query = (event.target as HTMLInputElement).value
+                }}
+              ></mdui-text-field>
 
-        <mdui-card style="padding: 16px;">
-          <div class="summary-row">
-            <span>Subtotal</span>
-            <strong>${this.formatMoney(this.quoteTotal())}</strong>
-          </div>
-        </mdui-card>
+              <div class="catalog-list">
+                ${this.filteredLaborRates().map(
+                  (item) => html`
+                    <mdui-card class="item-card">
+                      <div class="item-start">
+                        <div class="item-left">
+                          <div><strong>${item.name}</strong></div>
+                          <div class="item-meta">
+                            ${item.estimatedHoursMin}–${item.estimatedHoursMax} hr •
+                            ${this.formatMoney(item.hourlyRate)}/hr
+                          </div>
+                        </div>
+                        ${this.hoursFor(item.jobId) != 0
+                          ? html`<div class="item-total">
+                              ${this.formatMoney(item.hourlyRate * this.hoursFor(item.jobId))}
+                            </div>`
+                          : ""}
+                      </div>
+
+                      <div class=${"stepper" + (this.hoursFor(item.jobId) == 0 ? " empty" : "")}>
+                        <mdui-button-icon
+                          class="remove"
+                          icon="remove"
+                          @click=${() => this.changeHours(item, -0.5)}
+                        ></mdui-button-icon>
+                        <mdui-text-field
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          label="Hours"
+                          .value=${String(this.hoursFor(item.jobId))}
+                          @input=${(event: Event) => {
+                            this.setHours(item, Number((event.target as HTMLInputElement).value || 0))
+                          }}
+                        ></mdui-text-field>
+                        <mdui-button-icon
+                          class="add"
+                          icon="add"
+                          @click=${() => this.changeHours(item, 0.5)}
+                        ></mdui-button-icon>
+                      </div>
+                    </mdui-card>
+                  `,
+                )}
+              </div>
+
+              <mdui-card style="padding: 16px;">
+                <div class="summary-row">
+                  <span>Subtotal</span>
+                  <strong>${this.formatMoney(this.quoteTotal())}</strong>
+                </div>
+              </mdui-card>`}
       </main>
     `
   }

@@ -22,6 +22,7 @@ export class QuoteListPage extends LitElement {
       padding: 1rem 1rem 6rem;
       max-width: 32rem;
       margin: 0 auto;
+      display: grid;
     }
 
     .add-fab {
@@ -29,6 +30,12 @@ export class QuoteListPage extends LitElement {
       right: 1rem;
       bottom: calc(1rem + env(safe-area-inset-bottom));
       z-index: 20;
+    }
+
+    mdui-card {
+      padding: 24px;
+      text-align: center;
+      margin: auto;
     }
   `
 
@@ -66,7 +73,7 @@ export class QuoteListPage extends LitElement {
   private renderQuotesList() {
     if (this.loading) {
       return html`
-        <mdui-card style="padding: 24px; text-align: center;">
+        <mdui-card>
           <mdui-circular-progress indeterminate></mdui-circular-progress>
           <div style="margin-top: 12px;">Loading quotes from the server...</div>
         </mdui-card>
@@ -75,7 +82,7 @@ export class QuoteListPage extends LitElement {
 
     if (this.error) {
       return html`
-        <mdui-card style="padding: 24px; text-align: center;">
+        <mdui-card>
           <div>${this.error}</div>
           <div style="margin-top: 12px;">
             <mdui-button variant="filled" @click=${() => void this.loadQuotes()}>Try again</mdui-button>
@@ -85,11 +92,7 @@ export class QuoteListPage extends LitElement {
     }
 
     if (this.quotes.length === 0) {
-      return html`
-        <mdui-card style="padding: 24px; text-align: center;">
-          No quotes yet. Tap the Add button to create the first one.
-        </mdui-card>
-      `
+      return html` <mdui-card> No quotes yet. Tap the Add button to create the first one. </mdui-card> `
     }
 
     return this.quotes.map(

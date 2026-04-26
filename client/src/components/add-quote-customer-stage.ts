@@ -19,6 +19,7 @@ export class AddQuoteCustomerStage extends LitElement {
   static styles = css`
     main {
       margin-top: 64px;
+      display: grid;
     }
 
     .search {
@@ -32,6 +33,10 @@ export class AddQuoteCustomerStage extends LitElement {
       right: 1rem;
       bottom: calc(1rem + env(safe-area-inset-bottom));
       z-index: 20;
+    }
+
+    mdui-circular-progress {
+      margin: auto;
     }
   `
 
