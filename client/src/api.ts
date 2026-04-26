@@ -35,6 +35,13 @@ function withSyncStatus(quote: QuoteWithDetails, syncStatus: QuoteWithDetails["s
   }
 }
 
+function withSavedTimestamp(quote: QuoteWithDetails): QuoteWithDetails {
+  return {
+    ...quote,
+    date: new Date().toISOString(),
+  }
+}
+
 function isOfflineError(error: unknown): boolean {
   return error instanceof TypeError
 }
@@ -157,12 +164,14 @@ export async function fetchRealtimeClientSecret(): Promise<string> {
 }
 
 export async function createQuote(quote: QuoteWithDetails): Promise<QuoteWithDetails> {
+  const quoteToSave = withSavedTimestamp(quote)
+
   try {
     if (!navigator.onLine) {
       throw new TypeError("Offline")
     }
 
-    const savedQuote = withSyncStatus(await postQuote(quote), "synced")
+    const savedQuote = withSyncStatus(await postQuote(quoteToSave), "synced")
     await putStoredQuote(savedQuote)
     await removePendingQuote(savedQuote.id)
     return savedQuote
@@ -171,7 +180,7 @@ export async function createQuote(quote: QuoteWithDetails): Promise<QuoteWithDet
       throw error
     }
 
-    const pendingQuote = withSyncStatus(quote, "pending")
+    const pendingQuote = withSyncStatus(quoteToSave, "pending")
     await queuePendingQuote(pendingQuote)
     return pendingQuote
   }

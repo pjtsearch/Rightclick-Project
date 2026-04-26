@@ -18,10 +18,6 @@ export function normalizeQuote(
     return nextQuote
   }
 
-  if (typeof quotePatch.date === "string" && /^\d{4}-\d{2}-\d{2}$/u.test(quotePatch.date)) {
-    nextQuote.date = quotePatch.date
-  }
-
   if (typeof quotePatch.surcharge === "number" && Number.isFinite(quotePatch.surcharge)) {
     nextQuote.surcharge = Math.max(0, quotePatch.surcharge)
   }

@@ -1,6 +1,7 @@
 import { LitElement, css, html } from "lit"
 import { fetchQuotes, quotesSyncedEvent } from "./api.ts"
 import { navigate } from "./navigation.ts"
+import { compareQuoteTimestampsDescending } from "./quote-date.ts"
 import type { QuoteWithDetails } from "./types.ts"
 import "./quote-card.ts"
 
@@ -51,7 +52,7 @@ export class QuoteListPage extends LitElement {
     try {
       const quotes = await fetchQuotes()
       this.quotes = [...quotes].sort(
-        (left, right) => right.date.localeCompare(left.date) || right.id.localeCompare(left.id),
+        (left, right) => compareQuoteTimestampsDescending(left.date, right.date) || right.id.localeCompare(left.id),
       )
     } catch (error) {
       this.error = error instanceof Error ? error.message : "Unable to load quotes."

@@ -22,6 +22,7 @@ export function buildVoiceAssistantInstructions(context: VoiceAssistantContext):
     "Do not invent catalog items. Keep unchanged parts of the quote as they are.",
     "Prices are managed by the app, so do not try to set custom prices; base the prices off of what is in the equipment and labor rates JSONs; multiply them according to the quantity or hours.",
     "Express the surcharge as a number 1-100, not as a decimal from 0-1.",
+    "Do not change quote.date. The app sets that automatically when the quote is saved.",
     "Always speak in English. Try to be as terse as possible, and don't say more than you need to. However, still be sure to ask questions if necessary.",
     `Current quote draft JSON: ${JSON.stringify(context.quote)}`,
     `New customer dialog open: ${JSON.stringify(context.newCustomerDialogIsOpen)}`,
@@ -84,9 +85,6 @@ export function buildUpdateQuoteTool() {
           type: "object",
           additionalProperties: false,
           properties: {
-            date: {
-              type: "string",
-            },
             surcharge: {
               type: "number",
             },

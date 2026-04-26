@@ -1,4 +1,5 @@
 import { LitElement, css, html } from "lit"
+import { formatQuoteTimestamp } from "./quote-date.ts"
 import type { QuoteWithDetails } from "./types.ts"
 import { getQuoteTotal } from "./quote-totals.ts"
 
@@ -42,13 +43,7 @@ export class QuoteCard extends LitElement {
   quote?: QuoteWithDetails
 
   private formatDate(value: string): string {
-    return value
-      ? new Intl.DateTimeFormat(undefined, {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }).format(new Date(`${value}T12:00:00`))
-      : ""
+    return value ? formatQuoteTimestamp(value) : ""
   }
 
   private formatMoney(value: number): string {

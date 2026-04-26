@@ -25,7 +25,7 @@ export function createEmptyQuote(): QuoteWithDetails {
   return {
     id,
     surcharge: 0,
-    date: new Date().toISOString().slice(0, 10),
+    date: "",
     customer: { ...emptyCustomer },
     equipments: [],
     labors: [],

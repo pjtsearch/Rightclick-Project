@@ -1,6 +1,7 @@
 import { LitElement, css, html } from "lit"
 import { deleteQuote, fetchEquipment, fetchLaborRates, fetchQuote } from "./api.ts"
 import { navigate } from "./navigation.ts"
+import { formatQuoteTimestamp } from "./quote-date.ts"
 import { getLaborTotal, getQuoteEquipmentTotal, getQuoteTotal } from "./quote-totals.ts"
 import type { Equipment, LaborRate, QuoteWithDetails } from "./types.ts"
 
@@ -75,11 +76,7 @@ export class QuoteViewPage extends LitElement {
   }
 
   private formatDate(value: string): string {
-    return new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(`${value}T12:00:00`))
+    return formatQuoteTimestamp(value)
   }
 
   private formatMoney(value: number): string {
